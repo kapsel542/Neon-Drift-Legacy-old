@@ -2,279 +2,266 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Drift: IDENTITY</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Drift: ELITE</title>
     <style>
-        body { margin: 0; background: #010103; color: #0ff; font-family: 'Consolas', monospace; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        canvas { border: 4px solid #f00; box-shadow: 0 0 20px #f00; background: #000; cursor: none; }
+        * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; }
+        body { margin: 0; background: #010105; color: #0ff; font-family: 'Courier New', monospace; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
         
-        .overlay { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 500; backdrop-filter: blur(10px); }
-        .btn { background: #000; border: 2px solid #0ff; color: #0ff; cursor: pointer; padding: 15px 40px; font-family: inherit; font-size: 1.5rem; transition: 0.2s; margin-top: 20px; text-transform: uppercase; }
-        .btn:hover { background: #0ff; color: #000; box-shadow: 0 0 25px #0ff; }
+        canvas { border: 4px solid #f00; background: #000; width: 95vw; height: auto; max-height: 75vh; aspect-ratio: 9/6; box-shadow: 0 0 30px rgba(255,0,0,0.3); }
 
-        /* Nickname Input */
-        #nickInput { background: #111; border: 2px solid #f0f; color: #f0f; padding: 10px; font-family: inherit; font-size: 1.2rem; text-align: center; outline: none; margin-bottom: 10px; }
+        #hud { position: absolute; top: 10px; width: 95vw; display: flex; justify-content: space-between; z-index: 5000; pointer-events: none; }
+        .stat-box { background: rgba(0,0,0,0.8); padding: 10px; border-left: 4px solid #0ff; pointer-events: none; }
+        .menu-bar { display: flex; gap: 8px; pointer-events: auto; }
+        .m-btn { background: #000; border: 2px solid #0ff; color: #0ff; padding: 10px 15px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.8rem; }
+        .m-btn:hover { background: #0ff; color: #000; }
 
-        /* Modernized Shop UI */
-        .sidebar { position: absolute; top: 0; width: 380px; height: 100%; background: rgba(5, 5, 15, 0.98); padding: 25px; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; overflow-y: auto; box-sizing: border-box; }
-        #shop { left: -400px; border-right: 3px solid #ff0; }
-        #shop.open { left: 0; }
+        .sidebar { position: absolute; right: 0; top: 0; width: 350px; height: 100%; background: #050510; border-left: 3px solid #0ff; z-index: 6000; padding: 20px; display: none; overflow-y: auto; box-shadow: -10px 0 30px #000; }
+        .section-label { color: #f0f; font-size: 0.9rem; margin: 15px 0 5px 0; border-bottom: 1px solid #333; }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .item { background: #111; border: 1px solid #333; padding: 10px; text-align: center; cursor: pointer; font-size: 0.65rem; transition: 0.2s; }
+        .item.owned { color: #0f0; border-color: #0f0; }
+        .item.eq { background: #002200; border-color: #0f0; box-shadow: inset 0 0 8px #0f0; }
+
+        .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(5px); }
+        input { background: #111; border: 2px solid #0ff; color: #0ff; padding: 12px; text-align: center; font-size: 1.2rem; margin: 15px; outline: none; width: 250px; }
+        .start-btn { background: #000; border: 3px solid #0f0; color: #0f0; padding: 15px 50px; font-size: 1.8rem; cursor: pointer; font-family: inherit; }
         
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .shop-item { background: #111; border: 1px solid #333; padding: 12px; cursor: pointer; text-align: center; transition: 0.3s; display: flex; flex-direction: column; justify-content: space-between; }
-        .shop-item:hover { border-color: #ff0; background: #1a1a00; }
-        .shop-item.owned { border-color: #0f0; }
-        .shop-item.active-item { background: #003333; border-color: #0ff; box-shadow: inset 0 0 10px #0ff; }
-        .shop-item b { font-size: 0.8rem; color: #ff0; }
-
-        #leaderboard { right: -400px; border-left: 3px solid #0ff; }
-        #leaderboard.open { right: 0; }
-        .rank-item { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 10px; padding: 5px; border-bottom: 1px solid #222; }
-        .you-rank { color: #f0f; background: rgba(255,0,255,0.1); border-color: #f0f; font-weight: bold; }
-
-        .nav-group { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 1100; }
-        .nav-btn { background: #000; border: 1px solid #0ff; color: #0ff; padding: 8px 15px; cursor: pointer; font-family: inherit; text-transform: uppercase; }
-        
-        #console { position: absolute; bottom: 20px; left: 20px; background: #000; border: 1px solid #0f0; padding: 5px; display: none; z-index: 2000; }
-        #ui { position: absolute; top: 20px; left: 20px; pointer-events: none; z-index: 100; }
+        #alert-text { position: absolute; top: 120px; width: 100%; text-align: center; font-size: 2.2rem; font-weight: bold; color: #f0f; display: none; z-index: 3500; pointer-events: none; }
     </style>
 </head>
 <body>
-    <div id="startScreen" class="overlay">
-        <h1 style="font-size: 4rem; text-shadow: 0 0 20px #0ff;">NEON DRIFT</h1>
-        <input type="text" id="nickInput" placeholder="ENTER PILOT TAG" maxlength="12">
-        <button class="btn" onclick="initGame()">INITIATE</button>
+
+    <div id="hud">
+        <div class="stat-box">SCORE: <span id="sc">0</span><br><span style="color:#ff0">UP: <span id="upc">0</span></span></div>
+        <div class="menu-bar">
+            <button class="m-btn" onclick="toggleMenu('shop')">PILOT SHOP</button>
+            <button class="m-btn" onclick="toggleMenu('ranks')">RANKS</button>
+        </div>
     </div>
 
-    <div id="deathScreen" class="overlay" style="display:none">
-        <h1 style="color:#f0f">CORE RUPTURE</h1>
-        <p>PILOT: <span id="displayNick" style="color:#0ff"></span></p>
-        <p>SCORE: <span id="finalScore">0</span> | BEST: <span id="bestScore">0</span></p>
-        <button class="btn" onclick="resetGame()">RE-INITIALIZE</button>
-    </div>
-
-    <div class="nav-group">
-        <button class="nav-btn" onclick="toggleMenu('shop')">MARKET</button>
-        <button class="nav-btn" onclick="toggleMenu('leaderboard')">RANKS</button>
-    </div>
-    
-    <div id="ui">
-        <div id="scoreDisplay">SCORE: 0</div>
-        <div style="color:#ff0">UP: <span id="upCount">0</span></div>
-        <div id="hullDisplay" style="color:#0f0; font-size: 0.8rem;"></div>
-    </div>
+    <div id="alert-text">EVENT TRIGGERED</div>
 
     <div id="shop" class="sidebar">
-        <h2 style="color:#ff0; text-align:center; margin-bottom:5px;">NEON MARKET</h2>
-        <div style="text-align:center; font-size: 0.7rem; color: #888; margin-bottom:15px;">UPGRADES PERSIST FOREVER</div>
-        <div id="shopGrid" class="shop-grid"></div>
+        <h2 style="color:#0ff; margin-top:0;">PILOT SHOP</h2>
+        
+        <div class="section-label">HULL SKINS</div>
+        <div id="skinContainer" class="shop-grid"></div>
+        
+        <div class="section-label">DRONE TECH</div>
+        <div id="droneContainer" class="shop-grid"></div>
+        
+        <div class="section-label">NEURAL PERKS</div>
+        <div id="perkContainer" class="shop-grid"></div>
+
+        <button class="m-btn" style="width:100%; border-color:#f00; color:#f00; margin-top:10px;" onclick="toggleMenu('shop')">CLOSE</button>
     </div>
 
-    <div id="leaderboard" class="sidebar">
-        <h2 style="color:#0ff; text-align:center;">TOP PILOTS</h2>
-        <div id="lbContent"></div>
+    <div id="ranks" class="sidebar">
+        <h2 style="color:#ff0">LEADERBOARD</h2>
+        <div id="lbList"></div>
+        <button class="m-btn" style="width:100%; margin-top:30px; border-color:#f00; color:#f00;" onclick="toggleMenu('ranks')">CLOSE</button>
     </div>
 
-    <div id="console"><input type="text" id="consoleInput" style="background:transparent; border:none; color:#0f0; outline:none; width:300px; font-family:inherit;"></div>
-    <canvas id="gameCanvas"></canvas>
+    <div id="startScreen" class="overlay">
+        <h1 id="mTitle" style="color:#0ff; font-size: 3.5rem; margin:0;">NEON DRIFT</h1>
+        <input type="text" id="nickInput" placeholder="PILOT_ID">
+        <button class="start-btn" onclick="startGame()">ENGAGE</button>
+    </div>
+
+    <canvas id="c"></canvas>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('c');
         const ctx = canvas.getContext('2d');
         canvas.width = 900; canvas.height = 600;
 
-        let score = 0, up = parseInt(localStorage.getItem('driftUP')) || 0;
-        let bestScore = parseInt(localStorage.getItem('driftBest')) || 0;
-        let pilotNick = localStorage.getItem('driftNick') || "";
-        let gameActive = false, godMode = false, hue = 0, hull = 0;
+        let save = JSON.parse(localStorage.getItem('nd_elite_save')) || {
+            nick: "PILOT", up: 0, owned: ['cyan'], eqSkin: 'cyan', eqDrone: null, eqPerks: []
+        };
 
-        const player = { x: 450, y: 300, size: 10, tx: 450, ty: 300, trail: [], speed: 0.12 };
-        let activeSkins = JSON.parse(localStorage.getItem('driftSkinsActive')) || ['default'];
-        let ownedItems = JSON.parse(localStorage.getItem('driftOwned')) || ['default'];
-        let enemies = [], points = [];
+        const skinData = {'cyan': '#0ff', 'fire': '#f44', 'toxic': '#0f0', 'gold': '#ff0', 'royal': '#a0f', 'void': '#555'};
+        const droneData = {
+            'scout': {n: 'Scout', p: 2500, r: 130},
+            'hunter': {n: 'Hunter', p: 6000, r: 230},
+            'sniper': {n: 'Sniper', p: 10000, r: 600},
+            'twin': {n: 'Twin-Link', p: 15000, r: 150}
+        };
+        const perkData = {
+            'magnet': {n: 'Magnet', p: 4000},
+            'shield': {n: 'Shield', p: 7000},
+            'interest': {n: 'Banker', p: 8000},
+            'chronos': {n: 'Chronos', p: 9000},
+            'overload': {n: 'Overload', p: 12000}
+        };
 
-        const inventory = [
-            { id: 'default', name: 'Standard', type: 'skin', cost: 0, color: '#0ff' },
-            { id: 'neon_red', name: 'Blood', type: 'skin', cost: 1000, color: '#f00' },
-            { id: 'gold', name: 'Midas', type: 'skin', cost: 5000, color: '#ff0' },
-            { id: 'void', name: 'Void', type: 'skin', cost: 8000, color: '#a0f' },
-            { id: 'rainbow', name: 'RGB', type: 'skin', cost: 25000, color: 'dynamic' },
-            { id: 'diamond', name: 'Diamond', type: 'shape', cost: 12000 },
-            { id: 'magnet', name: 'Magnet', type: 'gear', cost: 7500 },
-            { id: 'drone', name: 'Drone', type: 'gear', cost: 20000 },
-            { id: 'hull', name: 'Hull+', type: 'gear', cost: 15000 },
-            { id: 'speed', name: 'Speed+', type: 'gear', cost: 10000 }
-        ];
+        let active = false, score = 0, enemies = [], coins = [], milestones = {250:0, 500:0, 1500:0};
+        let player = { x: 450, y: 300, tx: 450, ty: 300, trail: [], hasShield: false };
+        let droneAngle = 0, gameSpeed = 1;
 
-        if (pilotNick) document.getElementById('nickInput').value = pilotNick;
+        document.getElementById('nickInput').value = save.nick;
+        updateSave();
 
-        function initGame() {
-            pilotNick = document.getElementById('nickInput').value || "PILOT_X";
-            localStorage.setItem('driftNick', pilotNick);
+        function updateSave() {
+            localStorage.setItem('nd_elite_save', JSON.stringify(save));
+            document.getElementById('upc').innerText = save.up;
+            document.getElementById('sc').innerText = Math.floor(score);
+        }
+
+        function toggleMenu(id) {
+            const el = document.getElementById(id);
+            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+            if(el.style.display === 'block') renderShop();
+        }
+
+        function renderShop() {
+            const getGrid = (data, type, eqKey) => Object.keys(data).map(k => {
+                const isOwned = save.owned.includes(k);
+                const isEq = (type === 'perk') ? save.eqPerks.includes(k) : save[eqKey] === k;
+                return `<div class="item ${isOwned?'owned':''} ${isEq?'eq':''}" onclick="buy('${k}','${type}',${data[k].p || 3000},'${eqKey}')">
+                    ${data[k].n || k.toUpperCase()}<br>${isOwned ? (isEq?'EQUIPPED':'SELECT') : (data[k].p || 3000)+' UP'}
+                </div>`;
+            }).join('');
+
+            document.getElementById('skinContainer').innerHTML = getGrid(skinData, 'skin', 'eqSkin');
+            document.getElementById('droneContainer').innerHTML = getGrid(droneData, 'drone', 'eqDrone');
+            document.getElementById('perkContainer').innerHTML = getGrid(perkData, 'perk', 'eqPerks');
+
+            let lb = JSON.parse(localStorage.getItem('nd_lb')) || [];
+            document.getElementById('lbList').innerHTML = lb.map((e,i)=>`<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #222; font-size:0.8rem;"><span>#${i+1} ${e.n}</span><span>${e.s}</span></div>`).join('');
+        }
+
+        function buy(id, type, price, eqKey) {
+            if(!save.owned.includes(id)) {
+                if(save.up >= price) { save.up -= price; save.owned.push(id); } else return;
+            }
+            if(type === 'skin') save.eqSkin = id;
+            if(type === 'drone') save.eqDrone = (save.eqDrone === id) ? null : id;
+            if(type === 'perk') {
+                if(save.eqPerks.includes(id)) save.eqPerks = save.eqPerks.filter(p => p !== id);
+                else save.eqPerks.push(id);
+            }
+            updateSave(); renderShop();
+        }
+
+        function startGame() {
+            save.nick = document.getElementById('nickInput').value || "PILOT";
+            updateSave();
             document.getElementById('startScreen').style.display = 'none';
-            gameActive = true;
-            resetStats();
-            loop();
+            player.x = 450; player.y = 300; score = 0; enemies = []; coins = [];
+            milestones = {250:0, 500:0, 1500:0}; gameSpeed = save.eqPerks.includes('chronos') ? 0.85 : 1;
+            player.hasShield = save.eqPerks.includes('shield');
+            active = true; loop();
         }
 
-        function resetStats() {
-            hull = activeSkins.includes('hull') ? 1 : 0;
-            player.speed = activeSkins.includes('speed') ? 0.22 : 0.12;
-            document.getElementById('hullDisplay').innerText = hull > 0 ? "HULL INTEGRITY: NOMINAL" : "";
+        function die() {
+            if(player.hasShield) {
+                player.hasShield = false;
+                enemies = [];
+                showAlert("SHIELD BROKEN!", "#fff");
+                return;
+            }
+            active = false;
+            let lb = JSON.parse(localStorage.getItem('nd_lb')) || [];
+            lb.push({n: save.nick, s: Math.floor(score)});
+            lb.sort((a,b)=>b.s-a.s);
+            localStorage.setItem('nd_lb', JSON.stringify(lb.slice(0,100)));
+            document.getElementById('mTitle').innerText = "SYSTEM REBOOT";
+            document.getElementById('startScreen').style.display = 'flex';
         }
 
-        function getLeaderboard() {
-            let board = JSON.parse(localStorage.getItem('driftLB')) || 
-                Array.from({length: 10}, (_, i) => ({ name: "CPU_" + (i+1), score: (10 - i) * 500 }));
-            let found = board.find(p => p.name === pilotNick);
-            if (!found) board.push({ name: pilotNick, score: bestScore });
-            else found.score = bestScore;
-            return board.sort((a,b) => b.score - a.score).slice(0, 100);
-        }
-
-        function updateLBDisplay() {
-            const board = getLeaderboard();
-            document.getElementById('lbContent').innerHTML = board.map((p, i) => `
-                <div class="rank-item ${p.name === pilotNick ? 'you-rank' : ''}">
-                    <span>#${i+1} ${p.name}</span><span>${p.score}</span>
-                </div>
-            `).join('');
-        }
-
-        function buyItem(item) {
-            if (ownedItems.includes(item.id)) {
-                if (item.type === 'skin' || item.type === 'shape') {
-                    activeSkins = activeSkins.filter(id => inventory.find(i => i.id === id).type !== item.type);
-                    activeSkins.push(item.id);
-                } else {
-                    if (activeSkins.includes(item.id)) activeSkins = activeSkins.filter(i => i !== item.id);
-                    else activeSkins.push(item.id);
-                }
-            } else if (up >= item.cost) { up -= item.cost; ownedItems.push(item.id); activeSkins.push(item.id); }
-            save(); updateShop(); resetStats();
-        }
-
-        function save() {
-            localStorage.setItem('driftUP', up);
-            localStorage.setItem('driftOwned', JSON.stringify(ownedItems));
-            localStorage.setItem('driftSkinsActive', JSON.stringify(activeSkins));
-            document.getElementById('upCount').innerText = up;
-        }
-
-        function updateShop() {
-            document.getElementById('shopGrid').innerHTML = inventory.map(item => `
-                <div class="shop-item ${ownedItems.includes(item.id) ? 'owned' : ''} ${activeSkins.includes(item.id) ? 'active-item' : ''}" onclick='buyItem(${JSON.stringify(item)})'>
-                    <strong>${item.name}</strong>
-                    <b>${activeSkins.includes(item.id) ? 'ACTIVE' : ownedItems.includes(item.id) ? 'EQUIP' : item.cost + ' UP'}</b>
-                </div>
-            `).join('');
-        }
-
-        function resetGame() {
-            score = 0; enemies = []; points = []; gameActive = true;
-            player.x = 450; player.y = 300; player.trail = [];
-            document.getElementById('deathScreen').style.display = 'none';
-            resetStats();
-            loop();
-        }
-
-        function endGame(reason) {
-            if (hull > 0) { hull--; document.getElementById('hullDisplay').innerText = "HULL CRITICAL!"; return; }
-            gameActive = false;
-            if (score > bestScore) { bestScore = score; localStorage.setItem('driftBest', bestScore); }
-            let board = getLeaderboard().filter(p => p.name !== pilotNick);
-            board.push({ name: pilotNick, score: bestScore });
-            localStorage.setItem('driftLB', JSON.stringify(board.sort((a,b)=>b.score-a.score).slice(0,100)));
-            document.getElementById('displayNick').innerText = pilotNick;
-            document.getElementById('finalScore').innerText = score;
-            document.getElementById('bestScore').innerText = bestScore;
-            document.getElementById('deathScreen').style.display = 'flex';
-            updateLBDisplay();
+        function showAlert(t, c) {
+            const el = document.getElementById('alert-text');
+            el.innerText = t; el.style.color = c; el.style.display = 'block';
+            setTimeout(()=> el.style.display = 'none', 2000);
         }
 
         window.addEventListener('mousemove', e => {
             const r = canvas.getBoundingClientRect();
-            player.tx = e.clientX - r.left; player.ty = e.clientY - r.top;
+            player.tx = (e.clientX - r.left) * (900/r.width);
+            player.ty = (e.clientY - r.top) * (600/r.height);
         });
-
-        window.addEventListener('keydown', e => {
-            if (e.key === '`') {
-                const c = document.getElementById('console');
-                c.style.display = c.style.display === 'block' ? 'none' : 'block';
-                if (c.style.display === 'block') document.getElementById('consoleInput').focus();
-            }
-        });
-
-        document.getElementById('consoleInput').addEventListener('keydown', e => {
-            if (e.key === 'Enter') {
-                const cmd = e.target.value.toLowerCase();
-                if (cmd === 'rich') { up += 100000; save(); }
-                if (cmd === 'clear') { localStorage.clear(); location.reload(); }
-                e.target.value = ''; document.getElementById('console').style.display = 'none';
-            }
-        });
-
-        function toggleMenu(id) { document.getElementById(id).classList.toggle('open'); }
 
         function loop() {
-            if (!gameActive) return;
-            hue++;
-            ctx.fillStyle = 'rgba(0,0,0,0.18)';
+            if(!active) return;
+            ctx.fillStyle = gameSpeed > 1 ? 'rgba(40,0,0,0.2)' : 'rgba(0,0,0,0.2)';
             ctx.fillRect(0,0,900,600);
 
-            player.x += (player.tx - player.x) * player.speed;
-            player.y += (player.ty - player.y) * player.speed;
+            if(player.x < 5 || player.x > 895 || player.y < 5 || player.y > 595) die();
 
-            if (!godMode && (player.x < 10 || player.x > 890 || player.y < 10 || player.y > 590)) endGame("BOUNDARY");
+            player.x += (player.tx - player.x) * 0.12;
+            player.y += (player.ty - player.y) * 0.12;
 
-            player.trail.push({x: player.x, y: player.y});
-            if (player.trail.length > 22) player.trail.shift();
+            // --- Milestones ---
+            if(score >= milestones[250] + 250) { 
+                milestones[250] += 250; showAlert("SPEED OVERDRIVE", "#f00"); 
+                gameSpeed += 0.4; setTimeout(()=> gameSpeed = (save.eqPerks.includes('chronos') ? 0.85 : 1), 6000);
+            }
+            if(score >= milestones[500] + 500) {
+                milestones[500] += 500; showAlert("COIN RAIN", "#ff0");
+                for(let i=0;i<15;i++) coins.push({x:Math.random()*850, y:Math.random()*550});
+                if(save.eqPerks.includes('shield')) player.hasShield = true;
+            }
+            if(score >= milestones[1500] + 1500) {
+                milestones[1500] += 1500; showAlert("MEGA UP + CLEANSE", "#f0f");
+                coins.push({x: 450, y: 300, mega: true}); enemies = [];
+            }
 
-            let pColor = inventory.find(s => activeSkins.includes(s.id) && s.type === 'skin')?.color || '#0ff';
-            if (pColor === 'dynamic') pColor = `hsl(${hue%360}, 100%, 50%)`;
-
-            player.trail.forEach((t, i) => {
-                ctx.globalAlpha = i / 22; ctx.fillStyle = pColor;
-                if (activeSkins.includes('diamond')) {
-                    ctx.save(); ctx.translate(t.x, t.y); ctx.rotate(hue/20);
-                    ctx.fillRect(-8*(i/22), -8*(i/22), 16*(i/22), 16*(i/22)); ctx.restore();
-                } else {
-                    ctx.beginPath(); ctx.arc(t.x, t.y, player.size * (i/22), 0, Math.PI*2); ctx.fill();
+            // --- Drone Logic ---
+            if(save.eqDrone) {
+                droneAngle += 0.06;
+                let count = save.eqDrone === 'twin' ? 2 : 1;
+                for(let j=0; j<count; j++){
+                    let offset = (Math.PI * j);
+                    let dx = player.x + Math.cos(droneAngle + offset) * 60;
+                    let dy = player.y + Math.sin(droneAngle + offset) * 60;
+                    ctx.fillStyle = '#fff'; ctx.fillRect(dx-4, dy-4, 8, 8);
+                    enemies.forEach((en, i) => {
+                        if(Math.hypot(dx-en.x, dy-en.y) < droneData[save.eqDrone].r) {
+                            ctx.strokeStyle = skinData[save.eqSkin]; ctx.lineWidth = 2;
+                            ctx.beginPath(); ctx.moveTo(dx,dy); ctx.lineTo(en.x, en.y); ctx.stroke();
+                            enemies.splice(i,1); score += 10; updateSave();
+                        }
+                    });
                 }
+            }
+
+            // --- Trail ---
+            player.trail.push({x:player.x, y:player.y});
+            if(player.trail.length > 15) player.trail.shift();
+            player.trail.forEach((t,i)=>{
+                ctx.fillStyle = skinData[save.eqSkin]; ctx.globalAlpha = i/15;
+                ctx.beginPath(); ctx.arc(t.x, t.y, 10*(i/15), 0, Math.PI*2); ctx.fill();
             });
             ctx.globalAlpha = 1;
 
-            if (activeSkins.includes('drone')) {
-                const dx = player.x + Math.cos(hue/10) * 45;
-                const dy = player.y + Math.sin(hue/10) * 45;
-                ctx.fillStyle = '#0f0'; ctx.fillRect(dx-4, dy-4, 8, 8);
-                enemies.forEach((en, i) => { if (Math.hypot(dx-en.x, dy-en.y) < 22) { enemies.splice(i,1); score += 50; } });
-            }
-
-            if (Math.random() < 0.08) enemies.push({x: Math.random()*860+20, y: -20, v: 3+(score/1000)});
+            // --- Enemies ---
+            if(Math.random() < 0.08 * gameSpeed) enemies.push({x: Math.random()*880, y:-20, v:(3+score/2500)*gameSpeed});
             enemies.forEach((en, i) => {
                 en.y += en.v;
-                if (Math.hypot(player.x-en.x, player.y-en.y) < 18 && !godMode) {
-                    enemies.splice(i,1);
-                    endGame("COLLISION");
-                }
-                if (en.y > 620) { enemies.splice(i,1); score += 10; document.getElementById('scoreDisplay').innerText = "SCORE: " + score; }
+                if(Math.hypot(player.x-en.x, player.y-en.y) < 18) die();
+                if(en.y > 620) { enemies.splice(i,1); score += (save.eqPerks.includes('overload') ? 20 : 10); updateSave(); }
                 ctx.fillStyle = '#f0f'; ctx.fillRect(en.x-8, en.y-8, 16, 16);
             });
 
-            if (Math.random() < 0.015) points.push({x: Math.random()*800+50, y: Math.random()*500+50});
-            points.forEach((p, i) => {
-                if (activeSkins.includes('magnet') && Math.hypot(player.x-p.x, player.y-p.y) < 160) {
-                    p.x += (player.x - p.x) * 0.12; p.y += (player.y - p.y) * 0.12;
+            // --- Coins ---
+            if(Math.random() < 0.025) coins.push({x: Math.random()*850, y: Math.random()*550});
+            coins.forEach((cn, i) => {
+                let d = Math.hypot(player.x-cn.x, player.y-cn.y);
+                if(save.eqPerks.includes('magnet') && d < 200) {
+                    cn.x += (player.x - cn.x) * 0.12; cn.y += (player.y - cn.y) * 0.12;
                 }
-                if (Math.hypot(player.x-p.x, player.y-p.y) < 25) { points.splice(i,1); up += 100; save(); }
-                ctx.fillStyle = '#ff0'; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI*2); ctx.fill();
+                if(d < (cn.mega?45:25)) {
+                    let val = cn.mega ? 1000 : 100;
+                    if(save.eqPerks.includes('interest')) val *= 1.5;
+                    save.up += val; coins.splice(i,1); updateSave();
+                }
+                ctx.fillStyle = cn.mega ? '#f0f' : '#ff0';
+                ctx.beginPath(); ctx.arc(cn.x, cn.y, cn.mega?15:5, 0, Math.PI*2); ctx.fill();
             });
 
             requestAnimationFrame(loop);
         }
-
-        updateShop(); updateLBDisplay(); save();
     </script>
 </body>
 </html>
