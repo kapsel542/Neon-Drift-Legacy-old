@@ -1,267 +1,1847 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Drift: ELITE</title>
-    <style>
-        * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; }
-        body { margin: 0; background: #010105; color: #0ff; font-family: 'Courier New', monospace; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        
-        canvas { border: 4px solid #f00; background: #000; width: 95vw; height: auto; max-height: 75vh; aspect-ratio: 9/6; box-shadow: 0 0 30px rgba(255,0,0,0.3); }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>Kapsel's-Remastered Version X</title>
+<style>
+:root{--accent:#ff6600;--accent-2:#00ff44;--bg:#050508;--panel:#0a0a0c;--muted:#ccc;--danger:#ff0000}
+*{box-sizing:border-box;touch-action:none;-webkit-user-select:none}
+body{margin:0;background:var(--bg);color:var(--accent);font-family:'Courier New',monospace;overflow:hidden;display:flex;justify-content:center;align-items:center;height:100vh}
+canvas{border:5px solid var(--accent);background:#000;width:95vw;height:auto;max-height:75vh;aspect-ratio:9/6;box-shadow:0 0 30px rgba(255,102,0,0.4);cursor:none}
+#hud{position:absolute;top:10px;width:95vw;display:flex;justify-content:space-between;z-index:5000;pointer-events:none;gap:12px}
+.stat-box{background:rgba(0,0,0,0.9);padding:12px;border:2px solid var(--accent);border-left:8px solid var(--accent);pointer-events:none;color:var(--muted)}
+.m-btn{background:var(--accent);border:none;color:#000;padding:10px 20px;cursor:pointer;font-family:inherit;font-weight:900;pointer-events:auto;margin-left:5px;clip-path:polygon(10% 0,100% 0,90% 100%,0 100%);transition:transform 280ms cubic-bezier(.2,.9,.2,1),background 120ms}
+.m-btn:hover{transform:translateY(-3px);background:#fff}
+.sidebar{position:absolute;right:-380px;top:0;width:360px;height:100%;background:var(--panel);border-left:5px solid var(--accent);z-index:6000;padding:25px;display:block;overflow-y:auto;transition:right 700ms cubic-bezier(.22,.9,.2,1),box-shadow 700ms;box-shadow:0 0 0 rgba(0,0,0,0)}
+.sidebar.open{right:0;box-shadow:-30px 0 60px rgba(0,0,0,0.6);animation:shopPulse 700ms ease}
+@keyframes shopPulse{0%{transform:translateX(30px) scale(0.95);opacity:0}60%{transform:translateX(-6px) scale(1.02);opacity:1}100%{transform:translateX(0) scale(1)}}
+.shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:25px}
+.item{background:#1a1a1c;border:1px solid #444;padding:12px;text-align:center;cursor:pointer;font-size:0.65rem;color:var(--muted);transition:transform 160ms}
+.item:hover{transform:translateY(-4px)}
+.item.owned{color:var(--accent);border-color:var(--accent)}
+.item.eq{background:#331500;border-color:var(--accent);box-shadow:inset 0 0 10px var(--accent);color:#fff}
+.overlay{position:absolute;inset:0;background:rgba(5,5,8,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:4000}
+.start-btn{background:#000;border:4px solid var(--accent);color:var(--accent);padding:15px 40px;font-size:1.8rem;cursor:pointer;font-family:inherit;margin:5px;font-weight:bold;transition:transform 200ms}
+.start-btn:hover{background:var(--accent);color:#000;transform:translateY(-6px)}
+input{background:#111;border:2px solid var(--accent);color:var(--accent);padding:15px;text-align:center;font-size:1.2rem;margin:10px;outline:none;width:280px}
+#console{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);padding:5px;display:none;z-index:9999;border:1px solid var(--accent)}
+#console input{background:transparent;border:none;color:var(--accent);font-family:'Courier New',monospace;padding:5px;width:250px;font-size:0.8rem;text-align:center;border-bottom:1px solid var(--accent);outline:none}
+#event-banner{position:absolute;top:100px;width:100%;text-align:center;font-size:3rem;font-weight:900;text-shadow:0 0 20px var(--danger);pointer-events:none;display:none;z-index:7000;font-style:italic;color:var(--accent)}
+/* Leaderboard styles kept but we remove the DOM for leaderboard entirely */
+.ld-table{width:100%;max-width:600px;border-collapse:collapse;margin-top:20px;color:#fff}
+.ld-table th{color:var(--accent);border-bottom:3px solid var(--accent);padding:10px;text-align:left}
+.ld-table td{padding:8px;border-bottom:1px solid #222;font-size:0.9rem}
+.price{display:block;margin-top:6px;font-size:0.7rem;color:#bbb}
+.theme-row{display:flex;gap:8px;margin-bottom:15px}
+.theme-btn{width:36px;height:36px;border-radius:8px;border:2px solid #222;cursor:pointer}
+.small-note{font-size:0.75rem;color:#bbb;margin-bottom:8px}
 
-        #hud { position: absolute; top: 10px; width: 95vw; display: flex; justify-content: space-between; z-index: 5000; pointer-events: none; }
-        .stat-box { background: rgba(0,0,0,0.8); padding: 10px; border-left: 4px solid #0ff; pointer-events: none; }
-        .menu-bar { display: flex; gap: 8px; pointer-events: auto; }
-        .m-btn { background: #000; border: 2px solid #0ff; color: #0ff; padding: 10px 15px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.8rem; }
-        .m-btn:hover { background: #0ff; color: #000; }
+/* tiny toast */
+#flex-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18vh;background:#111;padding:10px 18px;border:2px solid var(--accent);color:var(--accent);border-radius:8px;z-index:10000;display:none}
+.rainbow-accent {
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rainbowShift 6s linear infinite;
+}
+@keyframes rainbowShift {
+  0%{filter: hue-rotate(0deg)} 100%{filter: hue-rotate(360deg)}
+}
 
-        .sidebar { position: absolute; right: 0; top: 0; width: 350px; height: 100%; background: #050510; border-left: 3px solid #0ff; z-index: 6000; padding: 20px; display: none; overflow-y: auto; box-shadow: -10px 0 30px #000; }
-        .section-label { color: #f0f; font-size: 0.9rem; margin: 15px 0 5px 0; border-bottom: 1px solid #333; }
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .item { background: #111; border: 1px solid #333; padding: 10px; text-align: center; cursor: pointer; font-size: 0.65rem; transition: 0.2s; }
-        .item.owned { color: #0f0; border-color: #0f0; }
-        .item.eq { background: #002200; border-color: #0f0; box-shadow: inset 0 0 8px #0f0; }
+/* Styl dla nakładki czapki (warstwa nad canvas) */
+#hatOverlay {
+  position: absolute;
+  pointer-events: none;
+  z-index: 7001; /* nad event-banner */
+  transform: translate(-50%,-100%);
+  font-size: 30px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+  will-change: transform, left, top;
+  transition: transform 80ms linear;
+  display: none;
+}
+#hatOverlay .hatName {
+  display:block;
+  font-size:11px;
+  color:#fff;
+  background:rgba(0,0,0,0.6);
+  padding:4px 8px;
+  border-radius:6px;
+  border:1px solid var(--accent);
+  margin-top:6px;
+  white-space:nowrap;
+  font-weight:700;
+}
+.hat-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:6px 8px;margin-left:6px;cursor:pointer;font-size:0.75rem}
+.hat-btn.buy{background:rgba(0,0,0,0.6)}
+.hat-row{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px}
+.hat-emoji{font-size:22px;margin-right:8px}
 
-        .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(5px); }
-        input { background: #111; border: 2px solid #0ff; color: #0ff; padding: 12px; text-align: center; font-size: 1.2rem; margin: 15px; outline: none; width: 250px; }
-        .start-btn { background: #000; border: 3px solid #0f0; color: #0f0; padding: 15px 50px; font-size: 1.8rem; cursor: pointer; font-family: inherit; }
-        
-        #alert-text { position: absolute; top: 120px; width: 100%; text-align: center; font-size: 2.2rem; font-weight: bold; color: #f0f; display: none; z-index: 3500; pointer-events: none; }
-    </style>
+/* ----- RESET UI: przycisk i modal ----- */
+#resetBtn {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 10002;
+  background: rgba(0,0,0,0.8);
+  border: 2px solid var(--danger);
+  color: var(--accent);
+  padding: 8px 12px;
+  font-weight:800;
+  cursor: pointer;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+#resetModal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 10003;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+}
+#resetModal .box {
+  width: 420px;
+  background: #070707;
+  border: 2px solid var(--danger);
+  padding: 18px;
+  color: #ddd;
+  border-radius: 10px;
+  text-align: left;
+}
+#resetModal .box h3 { margin:0 0 8px 0; color: var(--danger); }
+#resetModal .box p{ margin:6px 0; font-size:0.95rem; color:#bbb; }
+#resetModal .warn-list{ margin:8px 0 12px 0; padding-left:18px; color:#f7d7d7; }
+#resetModal .controls{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+#resetModal .controls button{ padding:8px 12px; border-radius:6px; border:1px solid #333; cursor:pointer; font-weight:700; }
+#resetModal .controls button.danger{ background:var(--danger); color:#000; border-color: #aa0000; }
+#resetModal input[type="text"]{ width:100%; padding:8px; margin-top:8px; background:#111; border:1px solid #333; color:var(--accent); border-radius:6px; outline:none; box-sizing:border-box; }
+</style>
 </head>
 <body>
+<div id="event-banner">Kapsel chaos mode</div>
 
-    <div id="hud">
-        <div class="stat-box">SCORE: <span id="sc">0</span><br><span style="color:#ff0">UP: <span id="upc">0</span></span></div>
-        <div class="menu-bar">
-            <button class="m-btn" onclick="toggleMenu('shop')">PILOT SHOP</button>
-            <button class="m-btn" onclick="toggleMenu('ranks')">RANKS</button>
-        </div>
+<div id="hud">
+  <div class="stat-box" aria-hidden="true">
+    SCORE: <span id="sc">0</span> | BEST: <span id="hi" style="color:var(--accent)">0</span><br>
+    <span style="color:#fff">UP: <span id="upc">0</span></span><br>
+    <span style="color:#bbb">MULT: <span id="mult">x1</span></span>
+  </div>
+
+  <!-- Flex Score panel (clickable) -->
+  <div class="stat-box" id="flexBox" style="pointer-events:auto;cursor:pointer;min-width:190px;text-align:left" title="Kliknij, aby skopiować FLEX SCORE do Discorda" onclick="copyFlexScore()">
+    <div style="font-weight:900;color:var(--accent);margin-bottom:6px">FLEX SCORE</div>
+    😊 <span id="flexNick" style="color:#fff;font-weight:700">PILOT</span><br>
+    ⭐ BEST: <span id="flexBest" style="color:var(--accent)">0</span><br>
+    💰 CASH: <span id="flexCash" style="color:var(--accent-2)">0</span>
+  </div>
+
+  <div style="display:flex;align-items:center;pointer-events:auto">
+    <button class="m-btn" onclick="toggleShop()">Kapsel SHOP</button>
+  </div>
+</div>
+
+<div id="shop" class="sidebar" aria-hidden="true">
+  <h2 style="color:var(--accent);margin-top:0;">Kapsel's Remastered Armory</h2>
+  <div class="small-note">THEMES:</div>
+  <div class="theme-row" id="themeRow"></div>
+
+  <!-- Tab buttons: multi-section armory -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;">
+    <button class="m-btn" onclick="switchTab('skins')" id="tab-skins" style="flex:1">SKINS</button>
+    <button class="m-btn" onclick="switchTab('weapons')" id="tab-weapons" style="flex:1">WEAPONS</button>
+    <button class="m-btn" onclick="switchTab('perks')" id="tab-perks" style="flex:1">PERKS</button>
+    <button class="m-btn" onclick="switchTab('shapes')" id="tab-shapes" style="flex:1">SHAPES</button>
+    <button class="m-btn" onclick="switchTab('events')" id="tab-events" style="flex:1">EVENTS</button>
+    <button class="m-btn" onclick="switchTab('extras')" id="tab-extras" style="flex:1">EXTRAS</button>
+  </div>
+
+  <div id="shopList"></div>
+  <button class="m-btn" style="width:100%;margin-left:0;background:#440000;color:#fff;margin-top:20px;" onclick="toggleShop()">RETURN</button>
+</div>
+
+<div id="startScreen" class="overlay">
+  <h1 id="titleText" style="color:var(--accent);font-size:5rem;margin:0;font-weight:900;">KAPSEL'S REMASTERED VERSION</h1>
+  <p id="subText" style="color:#fff;font-weight:bold;letter-spacing:5px;">Remastered Mayhem</p>
+  <input type="text" id="nickInput" placeholder="PILOT_ID" maxlength="15"/>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;">
+    <button class="start-btn" onclick="startGame()">ENGAGE</button>
+    <!-- RECORDS -> replaced by FLEX copy action -->
+    <button class="start-btn" style="border-color:#fff;color:#fff;" onclick="copyFlexScore()">FLEX</button>
+  </div>
+</div>
+
+<!-- removed leaderboard DOM (GLOBAL ARCHIVE) entirely -->
+
+<div id="console"><input type="text" id="consoleInput" placeholder="ROOT_ACCESS_..."></div>
+<canvas id="c"></canvas>
+
+<div id="flex-toast">FLEX COPIED — wklej na Discord</div>
+
+<!-- nakładka wizualna czapki -->
+<div id="hatOverlay">
+  <div id="hatEmoji" style="font-size:30px; text-align:center;">👑</div>
+  <div class="hatName" id="hatName">Crown</div>
+</div>
+
+<!-- PRZYCISK RESET -->
+<div id="resetBtn" title="Resetuj wszystkie zakupy">RESET</div>
+
+<!-- MODAL RESET -->
+<div id="resetModal" aria-hidden="true">
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+    <h3 id="resetTitle">Uwaga — Reset zakupów</h3>
+    <p>To działanie <strong>usunie wszystkie zakupione przedmioty</strong> (skórki, bronie, perki, cores, shapes, hats) i przywróci UP do 5000.</p>
+    <ul class="warn-list">
+      <li>Usunięte: wszystkie pozycje z <code>save.owned</code>, <code>save.ownedShapes</code>, <code>save.ownedHats</code></li>
+      <li>Odczepione: <code>eqSkin, eqDrone, eqPerks, eqCores, eqShape, eqHat</code></li>
+      <li>UP zostanie ustawione na <strong>5000</strong></li>
+    </ul>
+    <p style="color:#f3d7d7;font-weight:700">Jeśli chcesz kontynuować, wpisz <code>RESET</code> poniżej i kliknij "Resetuj wszystko".</p>
+    <input id="resetConfirmInput" type="text" placeholder="Wpisz RESET, aby potwierdzić" autocomplete="off" />
+    <div class="controls">
+      <button id="cancelResetBtn">Anuluj</button>
+      <button id="confirmResetBtn" class="danger" disabled>Resetuj wszystko</button>
     </div>
+  </div>
+</div>
 
-    <div id="alert-text">EVENT TRIGGERED</div>
+<script>
+// ---------- CORE / SAVE ----------
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+canvas.width = 900; canvas.height = 600;
 
-    <div id="shop" class="sidebar">
-        <h2 style="color:#0ff; margin-top:0;">PILOT SHOP</h2>
-        
-        <div class="section-label">HULL SKINS</div>
-        <div id="skinContainer" class="shop-grid"></div>
-        
-        <div class="section-label">DRONE TECH</div>
-        <div id="droneContainer" class="shop-grid"></div>
-        
-        <div class="section-label">NEURAL PERKS</div>
-        <div id="perkContainer" class="shop-grid"></div>
+let save = {
+  up: 5000,
+  nick: "PILOT",
+  owned: ['cyan'],
+  eqSkin: 'cyan',
+  eqDrone: null,
+  eqPerks: [],
+  eqCores: [],
+  best: 0,
+  ld_scores: [],
+  ld_wealth: [],
+  // SHAPES: new save fields
+  eqShape: null,
+  shapeColor: '#ffffff',
+  ownedShapes: []
+};
 
-        <button class="m-btn" style="width:100%; border-color:#f00; color:#f00; margin-top:10px;" onclick="toggleMenu('shop')">CLOSE</button>
+try {
+  const data = localStorage.getItem('nd_v10_final');
+  if (data) save = {...save, ...JSON.parse(data)};
+} catch(e){ console.warn(e) }
+
+// ---------- SKINS ----------
+const skins = {
+  'cyan': { c:'#0ff', p:750000, t:'all' },
+  'fire': { c:'#f44', p:800000, t:'all' },
+  'toxic': { c:'#0f0', p:750000, t:'all' },
+  'gold': { c:'#ff0', p:2500000, t:'all' },
+  'royal': { c:'#a0f', p:900000, t:'all' },
+  'void': { c:'#200540', p:1200000, t:'all' },
+  'neon': { c:'#f0f', p:1800000, t:'all' },
+  'chrome': { c:'#aaa', p:2200000, t:'all' },
+  'hacker': { c:'#00ff44', p:650000, t:'all' },
+  'plasma': { c:'#4400ff', p:1600000, t:'all' },
+  'glitch': { c:'rainbow', p:4500000, t:'all' },
+  'auto': { c:'#d4411e', p:950000, t:'ball' },
+  'sleekcar': { c:'#1ea6d4', p:1300000, t:'ball' },
+  'drone_mk1': { c:'#88ff88', p:650000, t:'drone' },
+  'drone_mk2': { c:'#ff88ff', p:950000, t:'drone' },
+  /* NEW SKINS */
+  'opal': { c:'#bfffcf', p:1100000, t:'ball' },
+  'ruby': { c:'#ff3366', p:1400000, t:'ball' },
+  'emerald': { c:'#00cc88', p:1400000, t:'ball' },
+  'rainbow_skin': { c:'rainbow', p:6500000, t:'ball' }
+};
+
+// ---------- SHAPES ----------
+const shapes = {
+  'triangle': { name:'Triangle Core', price:100000 },
+  'square':   { name:'Square Block',  price:100000 },
+  'diamond':  { name:'Diamond Edge',  price:100000 },
+  'star':     { name:'Star Pulse',    price:100000 },
+  'hexagon':  { name:'Hexa Shield',   price:100000 }
+};
+
+// ---------- DRONES (weapons) ----------
+const drones = {
+  'scout':    { n:'Scout',   p:100000,   r:150,  limit:5,  cd:3000, dmg:30 },
+  'sniper':   { n:'Deadshot',p:250000,   r:600,  limit:8,  cd:2500, dmg:60 },
+  'laser':    { n:'Pulse-X', p:750000,   r:250,  limit:13, cd:2000, dmg:80 },
+  'orbit':    { n:'Guardian',p:2500000,  r:200,  limit:15, cd:1750, dmg:160 },
+  'burst':    { n:'Big Bang',p:5000000,  r:450,  limit:16, cd:1500, dmg:240 },
+  'reaper':   { n:'Soul Reaper', p:15000000, r:650, limit:18, cd:1250, dmg:300 },
+  'titan':    { n:'Ω TITAN', p:50000000, r:900, limit:19, cd:1000, dmg:600 },
+  'horizon':  { n:'Event Horizon', p:250000000, r:850, limit:20, cd:1000, dmg:800 },
+  'singular': { n:'Ω Singularity', p:1000000000, r:1000, limit:30, cd:1250, dmg:1200 },
+  'midblade': { n:'Midblade', p:1200000, r:320, limit:12, cd:1500, dmg:140 },
+  'raptor':   { n:'Raptor',   p:2000000, r:420, limit:10, cd:1600, dmg:200 },
+  /* NEW WEAPONS */
+  'tempest':  { n:'Tempest Mk-II', p:2000000000, r:1200, limit:35, cd:900, dmg:2000 },
+  'voltaic':  { n:'Voltaic Lance', p:2300000000, r:1200, limit:37, cd:850, dmg:2500 }
+};
+
+// ---------- PERKS ----------
+const perks = {
+  'magnet': { n:'Mag-Link', p:50000 }, 'shield': { n:'Aegis', p:150000 },
+  'ghost': { n:'Phase', p:500000 }, 'frenzy': { n:'Overclock', p:1000000 },
+  'static': { n:'EMP', p:2500000 }, 'luck': { n:'Miner', p:5000000 },
+  'drift': { n:'Speed', p:10000000 }, 'chronos': { n:'Chronos', p:100000000 },
+  'vampire': { n:'Vampire', p:750000 }, 'afterburner': { n:'Afterburner', p:20000000 },
+  /* NEW PERKS */
+  'recycler': { n:'Recycler', p:1200000 }, /* increases coin value */
+  'flare': { n:'Solar Flare', p:3000000 }, /* amplifies solar events */
+  'phase_shift': { n:'Phase Shift', p:6000000 } /* chance to avoid death */
+};
+
+// ---------- CORES (nerfed / sequence set earlier) ----------
+const cores = {
+    'yield_1': { n:'Yield Core I', p:25000000, m:1.5, desc:'1.5x Coins' },
+    'score_1': { n:'Score Core I', p:50000000, m:2, desc:'2x Score' },
+    'siphon':  { n:'Data Siphon', p:250000000, m:2.5, desc:'2.5x UP Gain' },
+    'yield_2': { n:'Yield Core II', p:500000500, m:3, desc:'3x Coins' },
+    'omega':   { n:'Omega Core', p:10000000000, m:5, desc:'5x All (SINGLE SLOT)' },
+    'apex':    { n:'Apex Core', p:25000000000, m:8, desc:'8x All (ULTIMATE)' }
+};
+
+// ---------- EXPANSION PACK: EXTRA CONTENT ----------
+Object.assign(skins, {
+  'copper': { c:'#c77d35', p:1750000, t:'ball' },
+  'berry': { c:'#ff4f8b', p:1950000, t:'ball' },
+  'ice': { c:'#9de7ff', p:1650000, t:'ball' },
+  'obsidian': { c:'#111111', p:2600000, t:'ball' }
+});
+Object.assign(drones, {
+  'ion': { n:'Ion Needle', p:3800000000, r:1350, limit:40, cd:780, dmg:3200 },
+  'barrage': { n:'Barrage Core', p:5200000000, r:1500, limit:42, cd:720, dmg:3800 },
+  'halo': { n:'Halo Warden', p:7800000000, r:1600, limit:45, cd:650, dmg:4800 },
+  'voidray': { n:'Void Ray', p:12000000000, r:1750, limit:50, cd:620, dmg:6200 }
+});
+Object.assign(perks, {
+  'overdrive': { n:'Overdrive', p:25000000 },
+  'bulwark': { n:'Bulwark', p:40000000 },
+  'greed': { n:'Greed', p:75000000 },
+  'mirror': { n:'Mirror', p:90000000 }
+});
+Object.assign(cores, {
+  'quantum': { n:'Quantum Core', p:50000000000, m:12, desc:'12x All (LEGENDARY)' },
+  'nebula': { n:'Nebula Core', p:90000000000, m:15, desc:'15x Coins + Score' }
+});
+Object.assign(shapes, {
+  'pentagon': { name:'Pentagon Prism', price:100000 },
+  'ring': { name:'Ring Halo', price:100000 },
+  'arrow': { name:'Arrow Spike', price:100000 }
+});
+const eventCodex = {
+  'RAINBOW RAVE': { desc:'Total neon overload. Coins and colors go wild.', color:'#ffffff' },
+  'NOVA STORM': { desc:'Fast chaos wave with enemy flood.', color:'#ff2e2e' },
+  'MCDONALD MADZI': { desc:'Big enemies, bigger pressure.', color:'#ff5555' },
+  'TANIEC GROCHA': { desc:'Coin fiesta with absurd payout.', color:'#a8ff6b' },
+  'METEOR SHOWER': { desc:'Dense enemy rain and louder damage.', color:'#ff9a3d' },
+  'ION STORM': { desc:'Sharper movement and electric tempo.', color:'#6ee7ff' },
+  'GLITCH TIDE': { desc:'Randomized glow and bonus coin flow.', color:'#ff6bff' },
+  'BLACKOUT+': { desc:'Dark mode chaos with tighter dodges.', color:'#999999' }
+};
+const extraEventPool = ['HYPER-COIN','GRID OVERLOAD','TIME DILATION','EMP BURST','AEGIS REIGN','NEON REIGN','BLACKOUT','GRAVITY WELL','SOLAR FLARE','SCRAMBLE','PHANTOM','GOLD RUSH','NIGHTMARE RUSH',"HELL'S GATE",'RAINBOW RAVE','NOVA STORM','MCDONALD MADZI','TANIEC GROCHA','METEOR SHOWER','ION STORM','GLITCH TIDE','BLACKOUT+'];
+function applyEventState(ev){
+  rainbowMode = false; novaMode = false; mcdonaldMadzi = false; taniecGrocha = false;
+  timeMod = save.eqPerks.includes('chronos') ? 0.8 : 1;
+  const banner = document.getElementById('event-banner');
+  banner.style.display = 'block';
+  banner.innerText = ev;
+  banner.style.color = eventCodex[ev]?.color || (ev === "HELL'S GATE" ? 'var(--danger)' : 'var(--accent)');
+
+  if(ev === 'TIME DILATION') timeMod = 0.4;
+  if(ev === 'EMP BURST') enemies = [];
+  if(ev === 'AEGIS REIGN') p.hasShield = true;
+  if(ev === 'NIGHTMARE RUSH') timeMod = 1.6;
+  if(ev === "HELL'S GATE"){
+    bossActive = true;
+    bossTimer = 300;
+    enemies = [];
+    for(let i=0;i<12;i++) enemies.push({ x: Math.random()*860+20, y: -100 - i*50, v: 5 + i*0.3, isBoss: (i%4===0) });
+  }
+  if(ev === 'RAINBOW RAVE'){ rainbowMode = true; playRainbowRave(); }
+  if(ev === 'NOVA STORM'){
+    novaMode = true; timeMod = 1.4;
+    for(let i=0;i<18;i++) enemies.push({ x: Math.random()*880+10, y:-100 - Math.random()*400, v:4 + Math.random()*5, isBoss:false });
+    playNova();
+  }
+  if(ev === 'MCDONALD MADZI'){ mcdonaldMadzi = true; banner.style.color = '#ff5555'; }
+  if(ev === 'TANIEC GROCHA'){ taniecGrocha = true; banner.style.color = '#a8ff6b'; }
+  if(ev === 'METEOR SHOWER'){ timeMod = 1.15; }
+  if(ev === 'ION STORM'){ timeMod = 0.9; rainbowMode = true; }
+  if(ev === 'GLITCH TIDE'){ rainbowMode = true; }
+  if(ev === 'BLACKOUT+'){ timeMod = 0.85; }
+}
+function endActiveEvent(){
+  if(!bossActive){
+    document.getElementById('event-banner').style.display='none';
+    eventActive = false;
+  }
+  if(currentEvent==='NIGHTMARE RUSH' || currentEvent==='TIME DILATION') timeMod = save.eqPerks.includes('chronos') ? 0.8 : 1;
+  rainbowMode = false; novaMode = false; mcdonaldMadzi = false; taniecGrocha = false; currentEvent = '';
+}
+function forceEvent(ev){
+  if(eventActive || bossActive) return;
+  eventActive = true;
+  currentEvent = ev;
+  applyEventState(ev);
+  playEvent(ev==="HELL'S GATE" ? 'boss' : 'normal');
+  setTimeout(endActiveEvent, 9000);
+}
+// disable cloud sync by leaving these blank
+const BIN_ID = '';
+const API_KEY = '';
+
+// ---------- CLOUD (no-op when BIN_ID/API_KEY blank) ----------
+async function syncCloud(){
+  try{
+    if(!BIN_ID || !API_KEY) return;
+    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+      method:'PUT',
+      headers:{ 'Content-Type':'application/json','X-Master-Key':API_KEY },
+      body: JSON.stringify({ scores: save.ld_scores, wealth: save.ld_wealth })
+    });
+  }catch(e){ console.log("Cloud Sync Error") }
+}
+async function fetchCloud(){
+  try{
+    if(!BIN_ID || !API_KEY) return;
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers:{ 'X-Master-Key':API_KEY }});
+    const data = await res.json();
+    save.ld_scores = data.record.scores || [];
+    save.ld_wealth = data.record.wealth || [];
+  }catch(e){ console.log("Cloud Fetch Error") }
+}
+
+// ---------- AUDIO (more sfx added) ----------
+const AudioCtx = (window.AudioContext || window.webkitAudioContext) ? new (window.AudioContext || window.webkitAudioContext)() : null;
+function playBeep(freq=440,dur=0.08,type='sine',gain=0.15){ if(!AudioCtx) return; const o=AudioCtx.createOscillator(), g=AudioCtx.createGain(); o.type=type; o.frequency.value=freq; g.gain.value=gain; o.connect(g); g.connect(AudioCtx.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.0001, AudioCtx.currentTime+dur); setTimeout(()=>{ try{ o.stop() } catch(e){} }, dur*1000+50); }
+function playPurchase(){ playBeep(880,0.06,'square',0.18); setTimeout(()=>playBeep(1320,0.05,'sine',0.12),70) }
+function playOpenShop(){ playBeep(440,0.12,'sine',0.22); setTimeout(()=>playBeep(660,0.08,'triangle',0.16),90); setTimeout(()=>playBeep(880,0.05,'sine',0.12),200) }
+function playCloseShop(){ playBeep(330,0.09,'sine',0.16); setTimeout(()=>playBeep(220,0.12,'triangle',0.12),90) }
+function playEvent(type){ if(type==='boss'){ playBeep(120,0.6,'sawtooth',0.25); setTimeout(()=>playBeep(200,0.4,'sawtooth',0.2),300) } else { playBeep(520,0.25,'square',0.2); setTimeout(()=>playBeep(660,0.18,'sine',0.15),180) } }
+function playKill(){ playBeep(1200,0.06,'square',0.22); setTimeout(()=>playBeep(900,0.08,'sine',0.14),60) }
+function playCoin(){ playBeep(1400,0.08,'triangle',0.2); setTimeout(()=>playBeep(1800,0.04,'sine',0.12),90) }
+function playDroneShot(){ playBeep(720,0.04,'sawtooth',0.12); setTimeout(()=>playBeep(840,0.03,'square',0.08),40) }
+function playCoreEquip(){ playBeep(540,0.08,'sine',0.18); setTimeout(()=>playBeep(720,0.06,'triangle',0.14),90) }
+function playBossDefeat(){ playBeep(160,0.6,'sawtooth',0.26); setTimeout(()=>playBeep(240,0.5,'sine',0.2),300); setTimeout(()=>playBeep(480,0.25,'triangle',0.16),700) }
+/* NEW SFX */
+function playPerkEquip(){ playBeep(980,0.06,'triangle',0.18); setTimeout(()=>playBeep(1260,0.04,'sine',0.12),80) }
+function playNova(){ playBeep(320,0.5,'sawtooth',0.28); setTimeout(()=>playBeep(520,0.25,'sine',0.18),250) }
+function playRainbowRave(){ playBeep(1000,0.04,'square',0.18); setTimeout(()=>playBeep(1200,0.03,'square',0.16),50); setTimeout(()=>playBeep(1400,0.02,'sine',0.12),100) }
+
+// ---------- STATE ----------
+let active=false, score=0, enemies=[], coins=[], lastEventScore=0, lastBossScore=0;
+let p={x:450,y:300,tx:450,ty:300,trail:[],hasShield:false,size:0.6,speed:0.15,god:false};
+let droneAngle=0, droneShots=0, droneOnCooldown=false;
+let bossActive=false, bossTimer=0, eventActive=false, timeMod=1;
+let currentEvent='';
+let rainbowMode=false; // NEW: when RAINBOW RAVE runs
+let novaMode=false;    // NEW: when NOVA STORM runs
+// -- NEW EVENT FLAGS --
+let mcdonaldMadzi = false;
+let taniecGrocha = false;
+
+// ---------- THEMES ----------
+function applyTheme(theme){ 
+  // if theme.accent is 'rainbow', toggle dataset flag for special rendering
+  if(theme.accent === 'rainbow'){ document.body.dataset.rainbow = 'true'; document.documentElement.style.setProperty('--accent', '#ffffff'); }
+  else { document.body.dataset.rainbow = 'false'; document.documentElement.style.setProperty('--accent', theme.accent); }
+  if(theme.accent2) document.documentElement.style.setProperty('--accent-2', theme.accent2); 
+  if(theme.bg) document.documentElement.style.setProperty('--bg', theme.bg); 
+  // optionally set panel tint
+  if(theme.panel) document.documentElement.style.setProperty('--panel', theme.panel);
+  // update CSS borders that depend on accent (quick re-render)
+  document.querySelectorAll('.stat-box, .item.eq').forEach(el=>el.style.borderLeftColor = getComputedStyle(document.documentElement).getPropertyValue('--accent'));
+}
+const themes = [
+  { name:'Neon Orange', accent:'#ff6600', accent2:'#00ff44', bg:'#050508' },
+  { name:'Acid Green', accent:'#00ff44', accent2:'#ff6600', bg:'#030403' },
+  { name:'Cool Blue', accent:'#1ea6d4', accent2:'#a0f', bg:'#040617' },
+  { name:'Hellfire', accent:'#ff2e2e', accent2:'#ffb84d', bg:'#120203' },
+  /* NEW THEME: Rainbow UI */
+  { name:'Rainbow UI', accent:'rainbow', accent2:'#ffffff', bg:'#040004' },
+  { name:'Midnight', accent:'#8a8aff', accent2:'#ff8ad1', bg:'#02010a' }
+];
+function renderThemeButtons(){ const row=document.getElementById('themeRow'); row.innerHTML = themes.map((t,i)=>`<div title="${t.name}" class="theme-btn" onclick="applyTheme(themes[${i}])" style="background:${t.accent==='rainbow'?'linear-gradient(90deg,#ff0000,#ff7f00,#ffff00,#00ff00,#0000ff,#8b00ff)':t.accent};border-color:${t.accent2||'#222'}"></div>`).join('') }
+renderThemeButtons(); applyTheme(themes[0]);
+
+// ---------- MULTIPLIER / SCORE ----------
+function getMultiplier(){ let mult=1; if(Array.isArray(save.eqCores) && save.eqCores.length){ save.eqCores.forEach(c=>{ if(cores[c] && cores[c].m) mult *= cores[c].m; }); } if(save.eqPerks.includes('frenzy')) mult *= 1.4; return mult; }
+function addScore(amount){ const mult = getMultiplier(); const gained = Math.floor(amount * mult); score += gained; document.getElementById('mult').innerText = `x${mult.toFixed(2).replace(/\.00$/,'')}`; updateUI(); return gained; }
+
+// ---------- UI UPDATE ----------
+function updateUI(){
+  document.getElementById('upc').innerText = Math.floor(save.up).toLocaleString();
+  document.getElementById('sc').innerText = Math.floor(score).toLocaleString();
+  document.getElementById('hi').innerText = Math.floor(save.best).toLocaleString();
+  const ni = document.getElementById('nickInput');
+  if(save.nick && save.nick !== "PILOT"){ ni.value = save.nick; ni.readOnly = true; ni.style.opacity = "0.6" }
+  document.getElementById('mult').innerText = `x${getMultiplier().toFixed(2).replace(/\.00$/,'')}`;
+  // rainbow accent effect on some texts
+  const title = document.getElementById('titleText');
+  if(document.body.dataset.rainbow === 'true'){ title.classList.add('rainbow-accent') } else title.classList.remove('rainbow-accent');
+
+  // update flex score UI
+  updateFlexScore();
+
+  // jeśli sklep jest otwarty, odśwież widok zgodnie z aktywną zakładką
+  if(document.getElementById('shop').classList.contains('open') && currentTab !== 'skins') {
+    renderShop();
+  }
+}
+
+// ---------- FLEX SCORE (new system) ----------
+function updateFlexScore(){
+  const nick = save.nick || "PILOT";
+  const best = save.best || 0;
+  const cash = save.up || 0;
+  document.getElementById('flexNick').innerText = nick;
+  document.getElementById('flexBest').innerText = Math.floor(best).toLocaleString();
+  document.getElementById('flexCash').innerText = Math.floor(cash).toLocaleString();
+}
+
+// copy to clipboard and show mini-toast
+function copyFlexScore(){
+  const nick = save.nick || "PILOT";
+  const best = Math.floor(save.best || 0).toLocaleString();
+  const cash = Math.floor(save.up || 0).toLocaleString();
+
+  const text =
+`🔥 **KAPSEL'S REMASTERED — FLEX** 🔥
+😊 ${nick}
+⭐ BEST: ${best}
+💰 CASH: ${cash} UP
+
+> #NeonDrift #Flex`;
+
+  // clipboard
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>{
+      playPurchase();
+      showFlexToast("FLEX skopiowany — wklej na Discord");
+    }).catch(err=>{
+      // fallback
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text){
+  // fallback textarea copy
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  try{
+    document.execCommand('copy');
+    playPurchase();
+    showFlexToast("FLEX skopiowany (fallback)");
+  }catch(e){
+    alert("Nie udało się skopiować automatycznie. Skopiuj ręcznie:\n\n"+text);
+  }
+  document.body.removeChild(ta);
+}
+
+function showFlexToast(msg){
+  const t = document.getElementById('flex-toast');
+  t.innerText = msg;
+  t.style.display = 'block';
+  t.style.opacity = 1;
+  setTimeout(()=>{ t.style.transition = 'opacity 400ms'; t.style.opacity = 0; setTimeout(()=>{ t.style.display='none'; t.style.transition=''; },420); }, 1300);
+}
+
+// ---------- SHOP: tabs ----------
+let currentTab = 'skins';
+function switchTab(tab){
+  currentTab = tab;
+  ['skins','weapons','perks','shapes','events','extras'].forEach(id=>{
+    const el = document.getElementById(`tab-${id}`);
+    if(el) el.style.filter = (tab===id) ? 'brightness(1.15)' : 'none';
+  });
+  renderShop();
+}
+
+// ---------- SHOP RENDER ----------
+function renderShop(){
+  let h = '';
+
+  if(currentTab === 'skins'){
+    h += `<p style="color:var(--accent)">CORE SKINS</p><div class="shop-grid">` 
+    + Object.keys(skins).map(k=>{
+      const owned = save.owned.includes(k);
+      const eq = save.eqSkin === k;
+      const price = skins[k].p ? skins[k].p.toLocaleString()+' UP' : 'FREE';
+      return `<div class="item ${owned?'owned':''} ${eq?'eq':''}" onclick="${owned?`setSkin('${k}')`:`buy('${k}','skin',${skins[k].p})`}">${k.toUpperCase()}<span class="price">${owned?(eq?'EQUIPPED':'OWNED'):price}</span></div>`
+    }).join('') + `</div>`;
+
+    let keys = Object.keys(drones);
+    const mids = ['midblade','raptor'];
+    keys = keys.filter(k=>!mids.includes(k));
+    const midIndex = Math.floor(keys.length/2);
+    keys.splice(midIndex,0,...mids);
+
+    h += `<p style="color:var(--accent)">BEAST WEAPONS</p><div class="shop-grid">` + keys.map(k=>{ const owned = save.owned.includes(k), eq = save.eqDrone === k; const priceText = drones[k].p.toLocaleString(); return `<div class="item ${owned?'owned':''} ${eq?'eq':''}" onclick="buy('${k}','drone',${drones[k].p})">${drones[k].n}<br><span class="price">${owned?(eq?'EQUIPPED':'OWNED'):`${priceText} UP`}</span></div>` }).join('') + `</div>`;
+
+    h += `<p style="color:var(--accent)">BEAST PERKS</p><div class="shop-grid">` + Object.keys(perks).map(k=>{ const owned = save.owned.includes(k), eq = save.eqPerks.includes(k); return `<div class="item ${owned?'owned':''} ${eq?'eq':''}" onclick="buy('${k}','perk',${perks[k].p})">${perks[k].n}<br><span class="price">${owned?(eq?'ACTIVE':'OWNED'):`${perks[k].p.toLocaleString()} UP`}</span></div>` }).join('') + `</div>`;
+
+    h += `<p style="color:var(--accent)">CYBER-CORES</p><div class="shop-grid">` + Object.keys(cores).map(k=>{ const owned = save.owned.includes(k), eq = save.eqCores.includes(k); return `<div class="item ${owned?'owned':''} ${eq?'eq':''}" onclick="buy('${k}','core',${cores[k].p})">${cores[k].n}<br><b>${cores[k].desc}</b><br><span class="price">${owned?(eq?'ACTIVE':'OWNED'):`${cores[k].p.toLocaleString()} UP`}</span></div>` }).join('') + `</div>`;
+  }
+
+  if(currentTab === 'shapes'){
+    h += `<p style="color:var(--accent)">CUSTOM SHAPES</p><div class="shop-grid">`;
+    Object.keys(shapes).forEach(k=>{
+      const owned = save.ownedShapes.includes(k);
+      const eq = save.eqShape === k;
+      h += `<div class="item ${owned?'owned':''} ${eq?'eq':''}" onclick="${owned?`setShape('${k}')`:`buyShape('${k}',${shapes[k].price})`}">
+        ${shapes[k].name}<br>
+        <span class="price">${owned?(eq?'EQUIPPED':'OWNED'):(shapes[k].price.toLocaleString()+' UP')}</span>
+      </div>`;
+    });
+    h += `</div>`;
+
+    // color picker & preview
+    h += `<p style="color:var(--accent)">SHAPE COLOR</p>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="color" id="shapeColorPicker" value="${save.shapeColor}" onchange="setShapeColor(this.value)" style="width:56px;height:36px;padding:0;border:none;"/>
+      <div style="color:#bbb;font-size:0.9rem">Wybrany kolor</div>
     </div>
+    <div style="margin-top:8px;color:#777;font-size:0.85rem">?</div>`;
+  }
 
-    <div id="ranks" class="sidebar">
-        <h2 style="color:#ff0">LEADERBOARD</h2>
-        <div id="lbList"></div>
-        <button class="m-btn" style="width:100%; margin-top:30px; border-color:#f00; color:#f00;" onclick="toggleMenu('ranks')">CLOSE</button>
-    </div>
+  if(currentTab === 'weapons'){
+    h += `<p style="color:var(--accent)">WEAPON LAB</p><div class="shop-grid">` + Object.keys(drones).map(k=>{ const owned = save.owned.includes(k), eq = save.eqDrone === k; const priceText = drones[k].p.toLocaleString(); return `<div class="item ${owned?'owned':''} ${eq?'eq':''}" onclick="buy('${k}','drone',${drones[k].p})">${drones[k].n}<br><span class="price">${owned?(eq?'EQUIPPED':'OWNED'):`${priceText} UP`}</span></div>` }).join('') + `</div>`;
+    h += `<p style="color:var(--accent)">WEAPON NOTES</p><div style="color:#bbb;font-size:0.86rem;line-height:1.4;margin-bottom:14px">Każda broń daje własny styl automatycznego ataku. Im droższa, tym większy zasięg, limit trafień i dmg.</div>`;
+  }
 
-    <div id="startScreen" class="overlay">
-        <h1 id="mTitle" style="color:#0ff; font-size: 3.5rem; margin:0;">NEON DRIFT</h1>
-        <input type="text" id="nickInput" placeholder="PILOT_ID">
-        <button class="start-btn" onclick="startGame()">ENGAGE</button>
-    </div>
+  if(currentTab === 'perks'){
+    h += `<p style="color:var(--accent)">PERK MATRIX</p><div class="shop-grid">` + Object.keys(perks).map(k=>{ const owned = save.owned.includes(k), eq = save.eqPerks.includes(k); return `<div class="item ${owned?'owned':''} ${eq?'eq':''}" onclick="buy('${k}','perk',${perks[k].p})">${perks[k].n}<br><span class="price">${owned?(eq?'ACTIVE':'OWNED'):`${perks[k].p.toLocaleString()} UP`}</span></div>` }).join('') + `</div>`;
+    h += `<p style="color:var(--accent)">CORE VAULT</p><div class="shop-grid">` + Object.keys(cores).map(k=>{ const owned = save.owned.includes(k), eq = save.eqCores.includes(k); return `<div class="item ${owned?'owned':''} ${eq?'eq':''}" onclick="buy('${k}','core',${cores[k].p})">${cores[k].n}<br><b>${cores[k].desc}</b><br><span class="price">${owned?(eq?'ACTIVE':'OWNED'):`${cores[k].p.toLocaleString()} UP`}</span></div>` }).join('') + `</div>`;
+  }
 
-    <canvas id="c"></canvas>
+  if(currentTab === 'events'){
+    h += `<p style="color:var(--accent)">EVENT CONTROL</p>`;
+    h += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">`;
+    h += `<button class="m-btn" style="margin-left:0" onclick="triggerEvent()">RANDOM EVENT</button>`;
+    h += `<button class="m-btn" style="margin-left:0" onclick="triggerBoss()">BOSS RUSH</button>`;
+    h += `</div>`;
+    h += `<div class="shop-grid">` + Object.keys(eventCodex).map(ev=>`<div class="item" onclick="forceEvent('${ev}')"><b>${ev}</b><span class="price">${eventCodex[ev].desc}</span></div>`).join('') + `</div>`;
+  }
 
-    <script>
-        const canvas = document.getElementById('c');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 900; canvas.height = 600;
+  if(currentTab === 'extras'){
+    h += `<p style="color:var(--accent)">EXTRA SYSTEMS</p>`;
+    h += `<div class="shop-grid">`;
+    h += `<div class="item" onclick="copyFlexScore()"><b>FLEX COPY</b><span class="price">kopiuje wynik do schowka</span></div>`;
+    h += `<div class="item" onclick="toggleShop()"><b>CLOSE SHOP</b><span class="price">natychmiastowy powrót</span></div>`;
+    h += `<div class="item" onclick="p.god=!p.god;showFlexToast(p.god?'GOD MODE ON':'GOD MODE OFF')"><b>GOD MODE</b><span class="price">przełącznik testowy</span></div>`;
+    h += `<div class="item" onclick="forceEvent('GLITCH TIDE')"><b>GLITCH TIDE</b><span class="price">specjalny chaos event</span></div>`;
+    h += `</div>`;
+    h += `<p style="color:var(--accent)">HOT TIPS</p><div style="color:#bbb;font-size:0.86rem;line-height:1.5">` +
+         `Sklep ma teraz więcej zakładek, a eventy możesz odpalać ręcznie. Czapki, kształty, bronie i perki dalej zapisują się w localStorage.` +
+         `</div>`;
+  }
 
-        let save = JSON.parse(localStorage.getItem('nd_elite_save')) || {
-            nick: "PILOT", up: 0, owned: ['cyan'], eqSkin: 'cyan', eqDrone: null, eqPerks: []
-        };
+  document.getElementById('shopList').innerHTML = h;
+}
 
-        const skinData = {'cyan': '#0ff', 'fire': '#f44', 'toxic': '#0f0', 'gold': '#ff0', 'royal': '#a0f', 'void': '#555'};
-        const droneData = {
-            'scout': {n: 'Scout', p: 2500, r: 130},
-            'hunter': {n: 'Hunter', p: 6000, r: 230},
-            'sniper': {n: 'Sniper', p: 10000, r: 600},
-            'twin': {n: 'Twin-Link', p: 15000, r: 150}
-        };
-        const perkData = {
-            'magnet': {n: 'Magnet', p: 4000},
-            'shield': {n: 'Shield', p: 7000},
-            'interest': {n: 'Banker', p: 8000},
-            'chronos': {n: 'Chronos', p: 9000},
-            'overload': {n: 'Overload', p: 12000}
-        };
+// ---------- SHAPES: buy/equip/color ----------
+function buyShape(id, price){
+  if(!save.ownedShapes.includes(id)){
+    if(save.up >= price){
+      save.up -= price;
+      save.ownedShapes.push(id);
+      playPurchase();
+      saveData();
+    } else { playBeep(220,0.08,'sine',0.08); return; }
+  }
+  // if already owned, equip/unequip behaviour:
+  if(save.eqShape === id) save.eqShape = null;
+  else save.eqShape = id;
+  saveData();
+  updateUI();
+  renderShop();
+}
+function setShape(id){
+  save.eqShape = id;
+  saveData();
+  updateUI();
+  renderShop();
+}
+function setShapeColor(col){
+  save.shapeColor = col;
+  // update UI color input if present
+  const el = document.getElementById('shapeColorPicker');
+  if(el) el.value = col;
+  saveData();
+}
 
-        let active = false, score = 0, enemies = [], coins = [], milestones = {250:0, 500:0, 1500:0};
-        let player = { x: 450, y: 300, tx: 450, ty: 300, trail: [], hasShield: false };
-        let droneAngle = 0, gameSpeed = 1;
+// ---------- existing setSkin/buy (unchanged) ----------
+window.setSkin = (k) => { save.eqSkin = k; saveData(); updateUI(); renderShop(); }
+window.buy = (id,type,price) => {
+  let justBought = false;
+  if(!save.owned.includes(id)){
+    if(save.up >= price){ save.up -= price; save.owned.push(id); playPurchase(); justBought = true; } else { playBeep(220,0.08,'sine',0.08); return }
+  }
+  if(type === 'drone') save.eqDrone = (save.eqDrone === id ? null : id);
+  if(type === 'perk') {
+    if(save.eqPerks.includes(id)) save.eqPerks = save.eqPerks.filter(x=>x!==id);
+    else { save.eqPerks.push(id); playPerkEquip(); } // new sfx for perks
+  }
+  if(type === 'core') {
+    if(save.eqCores.includes(id)) save.eqCores = [];
+    else { save.eqCores = [id]; playCoreEquip(); }
+  }
+  saveData(); updateUI(); renderShop();
+}
 
-        document.getElementById('nickInput').value = save.nick;
-        updateSave();
+// ---------- SHOP TOGGLE ----------
+function toggleShop(){
+  const s=document.getElementById('shop');
+  if(s.classList.contains('open')){ s.classList.remove('open'); s.setAttribute('aria-hidden','true'); playCloseShop(); }
+  else { s.classList.add('open'); s.setAttribute('aria-hidden','false'); renderShop(); playOpenShop(); }
+}
 
-        function updateSave() {
-            localStorage.setItem('nd_elite_save', JSON.stringify(save));
-            document.getElementById('upc').innerText = save.up;
-            document.getElementById('sc').innerText = Math.floor(score);
+// ---------- EVENTS (updated: added two custom events) ----------
+function triggerEvent(){
+  if(eventActive || bossActive) return;
+  const ev = extraEventPool[Math.floor(Math.random()*extraEventPool.length)];
+  forceEvent(ev);
+}
+function triggerBoss(){
+  if(bossActive) return;
+  bossActive = true;
+  eventActive = true;
+  bossTimer = 300;
+  const banner = document.getElementById('event-banner');
+  banner.innerText = "BOSS PHASE: THE BEAST!";
+  banner.style.display = 'block'; banner.style.color = 'var(--danger)';
+  playEvent('boss');
+  enemies = [];
+}
+
+// ---------- MAIN LOOP (trail drawing updated to respect shapes) ----------
+function loop(){
+  if(!active) return;
+  ctx.fillStyle = currentEvent==='SOLAR FLARE' ? 'rgba(253,182,90,0.4)' : (bossActive ? 'rgba(50,0,0,0.3)' : 'rgba(0,0,0,0.3)');
+  ctx.fillRect(0,0,900,600);
+
+  if(!bossActive && score >= lastBossScore + 100000){ triggerBoss(); lastBossScore = score; }
+  if(!bossActive && score >= lastEventScore + 5000){ triggerEvent(); lastEventScore = score; }
+
+  if(currentEvent === 'GRAVITY WELL'){ p.tx += (450 - p.tx) * 0.05; p.ty += (300 - p.ty) * 0.05; }
+  let currentSpeed = (currentEvent === 'SCRAMBLE') ? (Math.random()>0.5 ? 0.4 : 0.05) : p.speed;
+  currentSpeed *= (save.eqPerks.includes('afterburner') ? 1.6 : 1);
+  p.x += (p.tx - p.x) * currentSpeed * timeMod;
+  p.y += (p.ty - p.y) * currentSpeed * timeMod;
+
+  if(!p.god && (p.x < 5 || p.x > 895 || p.y < 5 || p.y > 595)) die("FATAL ERROR");
+
+  p.trail.push({x:p.x,y:p.y});
+  let maxTrail = (currentEvent === 'SOLAR FLARE') ? 60 : 20;
+  while(p.trail.length > maxTrail) p.trail.shift();
+
+  p.trail.forEach((t,i)=>{
+    // color selection with rainbow support from skin or theme
+    let color;
+    const skinColor = skins[save.eqSkin] ? skins[save.eqSkin].c : '#0ff';
+    if(skins[save.eqSkin] && skins[save.eqSkin].c === 'rainbow') color = `hsl(${Date.now()/5 % 360},100%,50%)`;
+    else if(document.body.dataset.rainbow === 'true') color = `hsl(${(Date.now()/10 + i*6) % 360},100%,50%)`;
+    else color = skinColor;
+
+    ctx.globalAlpha = i/maxTrail;
+    // If player has an equipped SHAPE, draw that for the trail (using shapeColor)
+    if(save.eqShape){
+      ctx.fillStyle = save.shapeColor || '#fff';
+      const sMult = (currentEvent === 'SOLAR FLARE') ? 1.6 : 1.0;
+      if(save.eqShape === 'triangle'){
+        ctx.beginPath();
+        ctx.moveTo(t.x, t.y - 12 * sMult);
+        ctx.lineTo(t.x - 12 * sMult, t.y + 12 * sMult);
+        ctx.lineTo(t.x + 12 * sMult, t.y + 12 * sMult);
+        ctx.closePath();
+        ctx.fill();
+      } else if(save.eqShape === 'square'){
+        ctx.fillRect(t.x - 12 * sMult, t.y - 12 * sMult, 24 * sMult, 24 * sMult);
+      } else if(save.eqShape === 'diamond'){
+        ctx.beginPath();
+        ctx.moveTo(t.x, t.y - 16 * sMult);
+        ctx.lineTo(t.x - 16 * sMult, t.y);
+        ctx.lineTo(t.x, t.y + 16 * sMult);
+        ctx.lineTo(t.x + 16 * sMult, t.y);
+        ctx.closePath();
+        ctx.fill();
+      } else if(save.eqShape === 'star'){
+        ctx.beginPath();
+        for(let si=0; si<5; si++){
+          const outer = 12 * sMult;
+          const inner = 5 * sMult;
+          ctx.lineTo(t.x + outer * Math.cos((18 + si*72) * Math.PI/180), t.y - outer * Math.sin((18 + si*72) * Math.PI/180));
+          ctx.lineTo(t.x + inner * Math.cos((54 + si*72) * Math.PI/180), t.y - inner * Math.sin((54 + si*72) * Math.PI/180));
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else if(save.eqShape === 'hexagon'){
+        ctx.beginPath();
+        const R = 12 * sMult;
+        for(let h=0; h<6; h++){
+          ctx.lineTo(t.x + R * Math.cos(h * 2*Math.PI/6), t.y + R * Math.sin(h * 2*Math.PI/6));
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // fallback: circle
+        ctx.beginPath();
+        ctx.arc(t.x,t.y,(i * p.size) * ((currentEvent === 'SOLAR FLARE') ? 2 : 1),0,Math.PI*2);
+        ctx.fill();
+      }
+    } else {
+      // original skin / ball rendering
+      ctx.fillStyle = color;
+      let sMult = (currentEvent === 'SOLAR FLARE') ? 2 : 1;
+      if(skins[save.eqSkin] && skins[save.eqSkin].t === 'ball'){
+        let w = 12 + i * p.size * 0.25;
+        ctx.save(); ctx.translate(t.x,t.y); ctx.rotate(Math.sin(Date.now()/200)*0.04); ctx.fillRect(-w, -6*(i/maxTrail+1), w*2, 12*(i/maxTrail+1)); ctx.restore();
+      } else {
+        ctx.beginPath();
+        ctx.arc(t.x,t.y,(i * p.size) * sMult,0,Math.PI*2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  });
+
+  // boss timer handling (unchanged)
+  if(bossActive){
+    bossTimer--;
+    if(bossTimer <= 0){
+      bossActive = false;
+      eventActive = false;
+      let bonus = 100000;
+      if(Array.isArray(save.eqCores) && save.eqCores.length) save.eqCores.forEach(c => { if(cores[c] && cores[c].m) bonus *= cores[c].m });
+      if(save.eqCores.includes('apex')) bonus = Math.floor(bonus * 1.6);
+      save.up += bonus;
+      document.getElementById('event-banner').style.display = 'none';
+      lastEventScore = score; updateUI(); saveData();
+      playBossDefeat();
+    }
+  }
+
+  // drone behavior & kills (unchanged)
+  if(save.eqDrone){
+    droneAngle += 0.15 * timeMod;
+    let dx = p.x + Math.cos(droneAngle) * 75, dy = p.y + Math.sin(droneAngle) * 75;
+    const dData = drones[save.eqDrone];
+    ctx.fillStyle = droneOnCooldown ? 'rgba(100,100,100,0.5)' : (skins[save.eqSkin] && skins[save.eqSkin].t === 'drone' ? skins[save.eqSkin].c : '#fff');
+    if(skins[save.eqSkin] && skins[save.eqSkin].t === 'drone'){
+      ctx.beginPath(); ctx.ellipse(dx,dy,12,8,0,0,Math.PI*2); ctx.fill(); ctx.fillRect(dx-6,dy+6,12,4);
+    } else ctx.fillRect(dx-7,dy-7,14,14);
+
+    if(!droneOnCooldown){
+      let nearestIdx=-1, minDist=dData.r;
+      for(let i=0;i<enemies.length;i++){
+        let d = Math.hypot(dx-enemies[i].x, dy-enemies[i].y);
+        if(d < dData.r + (enemies[i].isBoss?40:0) && d < minDist){ minDist = d; nearestIdx = i }
+      }
+      if(nearestIdx !== -1){
+        ctx.strokeStyle = (skins[save.eqSkin] && skins[save.eqSkin].c !== 'rainbow') ? skins[save.eqSkin].c : '#fff';
+        ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(dx,dy); ctx.lineTo(enemies[nearestIdx].x,enemies[nearestIdx].y); ctx.stroke();
+
+        playDroneShot();
+        const baseKill = save.eqDrone ? 150 : 10;
+        addScore(baseKill);
+
+        if(save.eqPerks.includes('vampire')){
+          let steal = Math.floor(baseKill * 0.12);
+          save.up += steal;
+          updateUI();
         }
 
-        function toggleMenu(id) {
-            const el = document.getElementById(id);
-            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
-            if(el.style.display === 'block') renderShop();
-        }
+        playKill();
 
-        function renderShop() {
-            const getGrid = (data, type, eqKey) => Object.keys(data).map(k => {
-                const isOwned = save.owned.includes(k);
-                const isEq = (type === 'perk') ? save.eqPerks.includes(k) : save[eqKey] === k;
-                return `<div class="item ${isOwned?'owned':''} ${isEq?'eq':''}" onclick="buy('${k}','${type}',${data[k].p || 3000},'${eqKey}')">
-                    ${data[k].n || k.toUpperCase()}<br>${isOwned ? (isEq?'EQUIPPED':'SELECT') : (data[k].p || 3000)+' UP'}
-                </div>`;
-            }).join('');
+        enemies.splice(nearestIdx,1);
+        if(++droneShots >= dData.limit){ droneOnCooldown = true; setTimeout(()=>{ droneOnCooldown = false; droneShots = 0; }, dData.cd) }
+      }
+    }
+  }
 
-            document.getElementById('skinContainer').innerHTML = getGrid(skinData, 'skin', 'eqSkin');
-            document.getElementById('droneContainer').innerHTML = getGrid(droneData, 'drone', 'eqDrone');
-            document.getElementById('perkContainer').innerHTML = getGrid(perkData, 'perk', 'eqPerks');
+  // enemy spawn & movement & coins (unchanged)
+  if(Math.random() < (bossActive ? 0.25 : 0.14) * (currentEvent === 'NIGHTMARE RUSH' ? 1.8 : 1) * (currentEvent === 'METEOR SHOWER' ? 2 : 1) * (novaMode?1.6:1)){
+    enemies.push({ x: Math.random()*880+10, y:-100, v:(3.5+score/5000) * (bossActive?1.4:1) * (currentEvent === 'METEOR SHOWER' ? 1.25 : 1) * (novaMode?1.6:1), isBoss: bossActive });
+  }
 
-            let lb = JSON.parse(localStorage.getItem('nd_lb')) || [];
-            document.getElementById('lbList').innerHTML = lb.map((e,i)=>`<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #222; font-size:0.8rem;"><span>#${i+1} ${e.n}</span><span>${e.s}</span></div>`).join('');
-        }
+  enemies.forEach((en,i)=>{
+    // if MCDONALD MADZI, enemies are visually bigger and slightly faster (but we don't permanently mutate en.v)
+    const speedMultiplier = (currentEvent === 'MCDONALD MADZI') ? 1.15 : 1;
+    en.y += en.v * speedMultiplier * timeMod;
+    let sz = en.isBoss ? 66 : 22;
+    if(currentEvent === 'MCDONALD MADZI') sz *= 2;
 
-        function buy(id, type, price, eqKey) {
-            if(!save.owned.includes(id)) {
-                if(save.up >= price) { save.up -= price; save.owned.push(id); } else return;
-            }
-            if(type === 'skin') save.eqSkin = id;
-            if(type === 'drone') save.eqDrone = (save.eqDrone === id) ? null : id;
-            if(type === 'perk') {
-                if(save.eqPerks.includes(id)) save.eqPerks = save.eqPerks.filter(p => p !== id);
-                else save.eqPerks.push(id);
-            }
-            updateSave(); renderShop();
-        }
+    ctx.globalAlpha = currentEvent === 'PHANTOM' ? 0.2 : 1.0;
+    ctx.fillStyle = en.isBoss ? '#ff0000' : 'var(--accent)';
+    ctx.fillRect(en.x - sz/2, en.y - sz/2, sz, sz);
+    ctx.globalAlpha = 1.0;
+    if(!p.god && Math.hypot(p.x-en.x, p.y-en.y) < sz/2 + 5){
+      if(save.eqPerks.includes('phase_shift') && Math.random() < 0.35){
+        p.x += (Math.random()-0.5)*80; p.y += (Math.random()-0.5)*80;
+        playBeep(880,0.05,'triangle',0.14);
+        enemies.splice(i,1);
+      } else {
+        if(p.hasShield){ p.hasShield=false; enemies.splice(i,1) } else die("DESTRUCTION DETECTED");
+      }
+    }
+    if(en.y > 700){ enemies.splice(i,1); addScore(10); }
+  });
 
-        function startGame() {
-            save.nick = document.getElementById('nickInput').value || "PILOT";
-            updateSave();
-            document.getElementById('startScreen').style.display = 'none';
-            player.x = 450; player.y = 300; score = 0; enemies = []; coins = [];
-            milestones = {250:0, 500:0, 1500:0}; gameSpeed = save.eqPerks.includes('chronos') ? 0.85 : 1;
-            player.hasShield = save.eqPerks.includes('shield');
-            active = true; loop();
-        }
+  let coinChance = currentEvent === 'GOLD RUSH' ? 0.25 : 0.05;
+  if(rainbowMode) coinChance *= 1.5;
+  if(currentEvent === 'TANIEC GROCHA') coinChance *= 3; // more coins while event active
+  if(currentEvent === 'GLITCH TIDE') coinChance *= 2;
+  if(Math.random() < coinChance) coins.push({ x: Math.random()*850+25, y:-20 });
+  coins.forEach((cn,i)=>{
+    cn.y += 2.5 * timeMod;
+    if(save.eqPerks.includes('magnet') && Math.hypot(p.x-cn.x, p.y-cn.y) < 200){ cn.x += (p.x - cn.x) * 0.15; cn.y += (p.y - cn.y) * 0.15 }
+    if(Math.hypot(p.x-cn.x, p.y-cn.y) < 30){
+      let baseVal = 150 + (score * 0.2);
+      if(save.eqPerks.includes('recycler')) baseVal = Math.floor(baseVal * 1.25);
+      if(Array.isArray(save.eqCores) && save.eqCores.length) save.eqCores.forEach(c => { if(!c.includes('score') && cores[c] && cores[c].m) baseVal *= cores[c].m });
+      if(save.eqPerks.includes('flare') && (currentEvent === 'SOLAR FLARE' || rainbowMode)) baseVal = Math.floor(baseVal * 1.5);
 
-        function die() {
-            if(player.hasShield) {
-                player.hasShield = false;
-                enemies = [];
-                showAlert("SHIELD BROKEN!", "#fff");
-                return;
-            }
-            active = false;
-            let lb = JSON.parse(localStorage.getItem('nd_lb')) || [];
-            lb.push({n: save.nick, s: Math.floor(score)});
-            lb.sort((a,b)=>b.s-a.s);
-            localStorage.setItem('nd_lb', JSON.stringify(lb.slice(0,100)));
-            document.getElementById('mTitle').innerText = "SYSTEM REBOOT";
-            document.getElementById('startScreen').style.display = 'flex';
-        }
+      // TANIEC GROCHA triples coin value
+      let finalVal = baseVal;
+      if(currentEvent === 'TANIEC GROCHA') finalVal *= 3;
 
-        function showAlert(t, c) {
-            const el = document.getElementById('alert-text');
-            el.innerText = t; el.style.color = c; el.style.display = 'block';
-            setTimeout(()=> el.style.display = 'none', 2000);
-        }
+      save.up += Math.floor(finalVal);
+      coins.splice(i,1); updateUI(); playCoin();
+    }
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cn.x,cn.y,7,0,Math.PI*2); ctx.fill();
+    if(cn.y > 620) coins.splice(i,1);
+  });
 
-        window.addEventListener('mousemove', e => {
-            const r = canvas.getBoundingClientRect();
-            player.tx = (e.clientX - r.left) * (900/r.width);
-            player.ty = (e.clientY - r.top) * (600/r.height);
+  requestAnimationFrame(loop);
+}
+
+// ---------- START / DIE ----------
+function startGame(){
+  if(!save.nick || save.nick === "PILOT") save.nick = document.getElementById('nickInput').value.toUpperCase() || "PILOT";
+  saveData();
+  document.getElementById('startScreen').style.display = 'none';
+  score = 0; enemies = []; coins = []; p.trail = []; p.x=450; p.y=300;
+  lastEventScore = 0; lastBossScore = 0; bossActive = false; eventActive = false; active = true;
+  timeMod = save.eqPerks.includes('chronos') ? 0.8 : 1.0;
+  p.hasShield = save.eqPerks.includes('shield');
+  p.speed = save.eqPerks.includes('drift') ? 0.25 : 0.15;
+  if(save.eqPerks.includes('afterburner')) p.speed *= 1.25;
+  playBeep(660,0.08,'sine',0.18);
+  loop();
+}
+
+async function die(reason){
+  active = false;
+  let currentScore = Math.floor(score);
+  let currentWealth = Math.floor(save.up);
+  let existingScoreIdx = save.ld_scores.findIndex(r=>r.n===save.nick);
+  if(existingScoreIdx !== -1){ if(currentScore > save.ld_scores[existingScoreIdx].v) save.ld_scores[existingScoreIdx].v = currentScore; } else save.ld_scores.push({ n: save.nick, v: currentScore });
+  let existingWealthIdx = save.ld_wealth.findIndex(r=>r.n===save.nick);
+  if(existingWealthIdx !== -1){ save.ld_wealth[existingWealthIdx].v = currentWealth; } else save.ld_wealth.push({ n: save.nick, v: currentWealth });
+  save.best = Math.max(save.best, currentScore);
+  saveData(); await syncCloud(); // cloud is disabled unless BIN_ID/API_KEY provided
+  document.getElementById('titleText').innerText = "WASTED";
+  document.getElementById('subText').innerText = reason;
+  document.getElementById('startScreen').style.display = 'flex';
+  updateUI();
+  playBeep(120,0.4,'sawtooth',0.25);
+}
+
+// ---------- SAVE ----------
+function saveData(){ localStorage.setItem('nd_v10_final', JSON.stringify(save)); }
+
+// ---------- INPUTS & HOTKEYS ----------
+window.addEventListener('mousemove', e=>{ const r=canvas.getBoundingClientRect(); p.tx = (e.clientX - r.left) * (900/r.width); p.ty = (e.clientY - r.top) * (600/r.height); });
+window.addEventListener('keydown', e=>{ if(e.key==='`'){ const con=document.getElementById('console'); con.style.display=(con.style.display==='block')?'none':'block'; if(con.style.display==='block') document.getElementById('consoleInput').focus(); } if(e.key==='Enter' && document.activeElement.id==='consoleInput'){ let cmd=document.getElementById('consoleInput').value.toUpperCase(); if(cmd==='RICH'){ save.up += 100000000; updateUI(); playPurchase() } if(cmd==='GOD'){ p.god = !p.god; playBeep(660,0.08,'sine',0.15) } if(cmd==='UNLOCK ALL'){ const allItems = [...Object.keys(skins), ...Object.keys(drones), ...Object.keys(perks), ...Object.keys(cores)]; save.owned = [...new Set([...save.owned, ...allItems])]; save.ownedShapes = [...new Set([...save.ownedShapes, ...Object.keys(shapes)])]; if(document.getElementById('shop').classList.contains('open')) renderShop(); } document.getElementById('consoleInput').value=''; saveData(); updateUI(); } });
+
+/* ===========================
+   DODATKOWY KOD: SYSTEM CZAPEK
+   (ADD-ONLY — NIE NADPISUJE ISTNIEJĄCYCH FUNKCJI)
+   =========================== */
+
+/* --- konfiguracja czapek --- */
+// koszt każdej czapki
+const HAT_PRICE = 100000;
+
+// definicja czapek (id, nazwa, ikona)
+const hats = {
+  crown: { name: "Crown", icon: "👑", price: HAT_PRICE },
+  top_hat: { name: "Top Hat", icon: "🎩", price: HAT_PRICE },
+  viking: { name: "Viking Helmet", icon: "🪖", price: HAT_PRICE },
+  wizard: { name: "Wizard Hat", icon: "🧙‍♂️", price: HAT_PRICE },
+  baseball: { name: "Baseball Cap", icon: "🧢", price: HAT_PRICE }
+};
+
+Object.assign(hats, {
+  fedora: { name: 'Fedora', icon: '🎲', price: HAT_PRICE },
+  halo: { name: 'Halo', icon: '😇', price: HAT_PRICE },
+  horned: { name: 'Horned Helm', icon: '🛡️', price: HAT_PRICE }
+});
+
+/* --- wczytaj/utwórz pola w save (jeśli nie istnieją) --- */
+// nie modyfikujemy oryginalnej inicjalizacji save — dodajemy pola jeśli brak
+if(!Array.isArray(save.ownedHats)) save.ownedHats = [];
+if(typeof save.eqHat === 'undefined' || save.eqHat === null) save.eqHat = null;
+
+/* --- funkcje kupna / założenia --- */
+/* Kup czapkę — sprawdza UP, zapisuje w save.ownedHats */
+window.buyHat = function(hatID){
+  // komentarz po polsku: walidacja istnienia czapki
+  if(!hats[hatID]) { alert("Nieznana czapka."); return; }
+
+  // jeśli już kupiona — informuj i nie przeliczaj kosztu
+  if(save.ownedHats.includes(hatID)){
+    alert("Masz już tę czapkę.");
+    return;
+  }
+
+  // sprawdź UP
+  if(save.up < hats[hatID].price){
+    // dźwięk odmowy
+    playBeep(220,0.08,'sine',0.08);
+    alert("Nie masz wystarczająco UP!");
+    return;
+  }
+
+  // odejmij UP i zapisz
+  save.up -= hats[hatID].price;
+  save.ownedHats.push(hatID);
+  playPurchase();
+  saveData();
+  updateUI();
+  renderShop(); // odśwież UI
+};
+
+/* Załóż / zdejmij czapkę (toggle) */
+window.equipHat = function(hatID){
+  if(!hats[hatID]) return;
+  if(!save.ownedHats.includes(hatID)){
+    alert("Najpierw kup tę czapkę.");
+    return;
+  }
+
+  if(save.eqHat === hatID){
+    // zdejmij
+    save.eqHat = null;
+  } else {
+    // załóż
+    save.eqHat = hatID;
+  }
+  playCoreEquip();
+  saveData();
+  updateUI();
+  renderShop();
+  updateHatOverlayImmediate();
+};
+
+/* --- dodanie sekcji czapek do sklepu (po istniejącym renderShop) --- */
+/* Zapisz oryginalną funkcję renderShop i przekaż jej wykonanie, a następnie dopisz sekcję HATS
+   Takie podejście NIE NADPISUJE oryginalnej logiki, tylko dokłada nową sekcję. */
+(function(){
+  const originalRenderShop = renderShop;
+  renderShop = function(){
+    // wywołaj oryginalny renderer
+    originalRenderShop();
+
+    // jeśli aktualna karta to shapes, dorzuć sekcję Hats pod istniejącą zawartością
+    if(currentTab === 'shapes'){
+      const shopList = document.getElementById('shopList');
+      if(!shopList) return;
+
+      // stwórz wrapper sekcji czapek
+      let hatsHTML = `<hr style="border:1px solid #222;margin:8px 0;"><p style="color:var(--accent)">HATS</p>`;
+      hatsHTML += `<div style="margin-bottom:12px">`;
+      Object.keys(hats).forEach(hid=>{
+        const hat = hats[hid];
+        const owned = save.ownedHats.includes(hid);
+        const equipped = save.eqHat === hid;
+        const btnBuy = owned ? `<button class="hat-btn" disabled>Kup</button>` : `<button class="hat-btn buy" onclick="buyHat('${hid}')">Kup (${hat.price.toLocaleString()} UP)</button>`;
+        const btnEquip = owned ? `<button class="hat-btn" onclick="equipHat('${hid}')">${equipped? 'Zdejmij' : 'Załóż'}</button>` : `<button class="hat-btn" disabled>Załóż</button>`;
+
+        hatsHTML += `<div class="hat-row item ${owned?'owned':''} ${equipped?'eq':''}">
+          <div style="display:flex;align-items:center">
+            <div class="hat-emoji">${hat.icon}</div>
+            <div style="text-align:left">
+              <div style="font-weight:800;color:${equipped?'#fff':'#bbb'}">${hat.name}</div>
+              <div class="price" style="font-size:0.72rem">${owned ? (equipped ? 'EQUIPPED' : 'OWNED') : (hat.price.toLocaleString() + ' UP')}</div>
+            </div>
+          </div>
+          <div>${btnBuy}${btnEquip}</div>
+        </div>`;
+      });
+      hatsHTML += `</div>`;
+
+      // dopisz na końcu obecnej listy sklepu
+      shopList.insertAdjacentHTML('beforeend', hatsHTML);
+    }
+  };
+})();
+
+/* --- wizualizacja czapki nad graczem (DOM overlay) --- */
+/* Używamy osobnej warstwy DOM (#hatOverlay) nad canvas, którą przesuwamy zgodnie z pozycją gracza.
+   Dzięki temu NIE ingerujemy w główny loop rysujący canvas. */
+
+/* funkcja aktualizująca pozycję i zawartość nakładki czapki */
+function updateHatOverlayImmediate(){
+  const overlay = document.getElementById('hatOverlay');
+  const emojiEl = document.getElementById('hatEmoji');
+  const nameEl = document.getElementById('hatName');
+
+  if(!overlay || !emojiEl || !nameEl) return;
+
+  // brak założonej czapki -> ukryj nakładkę
+  if(!save.eqHat){
+    overlay.style.display = 'none';
+    return;
+  }
+
+  const hatData = hats[save.eqHat];
+  if(!hatData){ overlay.style.display = 'none'; return; }
+
+  // ustawik treść
+  emojiEl.innerText = hatData.icon;
+  nameEl.innerText = hatData.name;
+
+  overlay.style.display = 'block';
+
+  // oblicz pozycję nad graczem (skalowanie do bounding rect canvas)
+  const rect = canvas.getBoundingClientRect();
+  const px = rect.left + (p.x / 900) * rect.width;
+  const py = rect.top + (p.y / 600) * rect.height;
+
+  // ustaw pozycję elementu (centrowanie)
+  overlay.style.left = `${px}px`;
+  // umieść trochę nad graczem
+  overlay.style.top = `${py - (rect.height * 0.06)}px`;
+}
+
+/* pętla aktualizująca overlay płynnie (nie modyfikujemy main loop) */
+(function hatOverlayLoop(){
+  updateHatOverlayImmediate();
+  requestAnimationFrame(hatOverlayLoop);
+})();
+
+/* --- Jeżeli użytkownik od razu ma założoną czapkę w save (z poprzedniego zapisu), pokaż overlay --- */
+updateHatOverlayImmediate();
+
+/* ===========================
+   KONIEC DODATKOWEGO KODU CZAPEK
+   =========================== */
+
+/* Po dodaniu wszystkich funkcji — inicjalizacja UI (istniejące wywołania) */
+updateUI();
+switchTab('skins'); // initialize shop tab + render
+renderShop();
+
+/* ===========================
+   DODATKOWY KOD: RESET WSZYSTKIEGO (UI + LOGIKA)
+   - dodaje przycisk w lewym dolnym rogu
+   - otwiera modal z ostrzeżeniami
+   - wymaga wpisania "RESET" by aktywować przycisk potwierdzenia
+   - resetuje zakupy i zapisuje
+   =========================== */
+
+(function initResetUI(){
+  const resetBtn = document.getElementById('resetBtn');
+  const resetModal = document.getElementById('resetModal');
+  const cancelBtn = document.getElementById('cancelResetBtn');
+  const confirmBtn = document.getElementById('confirmResetBtn');
+  const input = document.getElementById('resetConfirmInput');
+
+  // pokaż modal po kliknięciu przycisku RESET
+  resetBtn.addEventListener('click', ()=> {
+    if(!resetModal) return;
+    input.value = '';
+    confirmBtn.disabled = true;
+    resetModal.style.display = 'flex';
+    resetModal.setAttribute('aria-hidden','false');
+    input.focus();
+  });
+
+  // anuluj
+  cancelBtn.addEventListener('click', ()=> {
+    resetModal.style.display = 'none';
+    resetModal.setAttribute('aria-hidden','true');
+  });
+
+  // odblokuj potwierdzenie tylko gdy wpisano RESET
+  input.addEventListener('input', ()=> {
+    confirmBtn.disabled = (input.value.trim().toUpperCase() !== 'RESET');
+  });
+
+  // potwierdź reset
+  confirmBtn.addEventListener('click', ()=> {
+    // bezpieczeństwo: dodatkowe sprawdzenie
+    if(input.value.trim().toUpperCase() !== 'RESET') return;
+    performFullReset();
+    // zamknij modal i pokaż komunikat
+    resetModal.style.display = 'none';
+    resetModal.setAttribute('aria-hidden','true');
+    showFlexToast("Reset wykonany — zakupy zostały usunięte");
+  });
+})();
+
+/* funkcja wykonująca faktyczny reset zakupów */
+function performFullReset(){
+  // Komentarz (PL): resetujemy jedynie zakupy i powiązane wyposażenia oraz UP.
+  // Nie usuwamy rekordu 'best' ani tabel leaderboard (zostawione celowo).
+  save.owned = ['cyan'];      // pozostawiamy darmowy/wyjściowy skin
+  save.eqSkin = 'cyan';
+  save.ownedShapes = [];
+  save.eqShape = null;
+  save.shapeColor = '#ffffff';
+  save.ownedHats = [];
+  save.eqHat = null;
+  save.eqDrone = null;
+  save.eqPerks = [];
+  save.eqCores = [];
+  save.up = 5000; // przywróć domyślne UP
+
+  // zapisz i odśwież UI
+  saveData();
+  updateUI();
+  renderShop();
+  updateHatOverlayImmediate();
+  playBeep(220,0.06,'sine',0.14);
+}
+
+/* ===========================
+   KONIEC KODU RESET
+   =========================== */
+
+
+// ===== ULTRA REMASTER PACK =====
+
+// EXTRA WEAPONS
+drones['obliterator'] = { n:'OBLITERATOR-X', p:5000000000, r:1500, limit:50, cd:700, dmg:5000 };
+drones['doomcore'] = { n:'DOOM CORE', p:9000000000, r:1800, limit:60, cd:500, dmg:8000 };
+
+// EXTRA PERKS
+perks['rage_mode'] = { n:'RAGE MODE', p:15000000 };
+perks['quantum'] = { n:'QUANTUM BOOST', p:50000000 };
+
+// EXTRA SHAPES
+shapes['omega'] = { name:'Omega Orb', price:500000 };
+shapes['cross'] = { name:'Cyber Cross', price:750000 };
+
+// EXTRA EVENTS
+const ultraEvents = [
+  'BLOOD MOON',
+  'VOID COLLAPSE',
+  'MONEY RAIN',
+  'ULTRA CHAOS',
+  'CYBER APOCALYPSE'
+];
+
+// POWER PANEL
+const ultraPanel = document.createElement('div');
+ultraPanel.style.position='fixed';
+ultraPanel.style.left='10px';
+ultraPanel.style.top='120px';
+ultraPanel.style.zIndex='99999';
+ultraPanel.style.background='rgba(0,0,0,0.85)';
+ultraPanel.style.border='3px solid var(--accent)';
+ultraPanel.style.padding='12px';
+ultraPanel.style.color='white';
+ultraPanel.style.fontFamily='monospace';
+ultraPanel.innerHTML = `
+<div style="font-weight:900;color:var(--accent);margin-bottom:10px;">
+⚡ ULTRA PANEL ⚡
+</div>
+
+<button onclick="activateUltraMode()" style="width:100%;margin-bottom:8px;padding:8px;background:#ff0000;color:white;border:none;cursor:pointer;">
+ACTIVATE ULTRA MODE
+</button>
+
+<button onclick="spawnMoneyRain()" style="width:100%;margin-bottom:8px;padding:8px;background:#00aa00;color:white;border:none;cursor:pointer;">
+MONEY RAIN
+</button>
+
+<button onclick="maxOutPlayer()" style="width:100%;padding:8px;background:#0000aa;color:white;border:none;cursor:pointer;">
+MAX OUT
+</button>
+`;
+document.body.appendChild(ultraPanel);
+
+// FUNCTIONS
+window.activateUltraMode = function(){
+  rainbowMode = true;
+  novaMode = true;
+  save.up += 999999999;
+  playNova();
+  showFlexToast('ULTRA MODE ACTIVATED');
+};
+
+window.spawnMoneyRain = function(){
+  for(let i=0;i<150;i++){
+    coins.push({
+      x:Math.random()*850+25,
+      y:Math.random()*-1200
+    });
+  }
+  showFlexToast('MONEY RAIN STARTED');
+};
+
+window.maxOutPlayer = function(){
+  save.up += 99999999999;
+  save.best += 10000000;
+
+  Object.keys(drones).forEach(x=>{
+    if(!save.owned.includes(x)) save.owned.push(x);
+  });
+
+  Object.keys(perks).forEach(x=>{
+    if(!save.owned.includes(x)) save.owned.push(x);
+  });
+
+  Object.keys(shapes).forEach(x=>{
+    if(!save.ownedShapes.includes(x)) save.ownedShapes.push(x);
+  });
+
+  updateUI();
+  saveData();
+  showFlexToast('PLAYER MAXED OUT');
+};
+
+// CYBER BACKGROUND EFFECT
+setInterval(()=>{
+  const fx = document.createElement('div');
+  fx.innerText = ['⚡','☢','💀','🔥','💸'][Math.floor(Math.random()*5)];
+  fx.style.position='fixed';
+  fx.style.left=Math.random()*100+'vw';
+  fx.style.top='-40px';
+  fx.style.fontSize=(20+Math.random()*40)+'px';
+  fx.style.pointerEvents='none';
+  fx.style.zIndex='2';
+  fx.style.opacity='0.8';
+  fx.style.transition='transform 4s linear, opacity 4s';
+  document.body.appendChild(fx);
+
+  requestAnimationFrame(()=>{
+    fx.style.transform='translateY(120vh) rotate(360deg)';
+    fx.style.opacity='0';
+  });
+
+  setTimeout(()=>fx.remove(),4200);
+},300);
+
+// RANDOM ULTRA EVENTS
+setInterval(()=>{
+  if(active && Math.random()<0.2){
+    const ev = ultraEvents[Math.floor(Math.random()*ultraEvents.length)];
+    document.getElementById('event-banner').innerText = ev;
+    document.getElementById('event-banner').style.display='block';
+
+    if(ev==='MONEY RAIN'){
+      spawnMoneyRain();
+    }
+
+    if(ev==='ULTRA CHAOS'){
+      for(let i=0;i<25;i++){
+        enemies.push({
+          x:Math.random()*880,
+          y:-Math.random()*2000,
+          v:8+Math.random()*10,
+          isBoss:true
         });
+      }
+    }
 
-        function loop() {
-            if(!active) return;
-            ctx.fillStyle = gameSpeed > 1 ? 'rgba(40,0,0,0.2)' : 'rgba(0,0,0,0.2)';
-            ctx.fillRect(0,0,900,600);
+    setTimeout(()=>{
+      document.getElementById('event-banner').style.display='none';
+    },4000);
+  }
+},12000);
 
-            if(player.x < 5 || player.x > 895 || player.y < 5 || player.y > 595) die();
 
-            player.x += (player.tx - player.x) * 0.12;
-            player.y += (player.ty - player.y) * 0.12;
+// ===== GODLIKE EXPANSION PACK =====
 
-            // --- Milestones ---
-            if(score >= milestones[250] + 250) { 
-                milestones[250] += 250; showAlert("SPEED OVERDRIVE", "#f00"); 
-                gameSpeed += 0.4; setTimeout(()=> gameSpeed = (save.eqPerks.includes('chronos') ? 0.85 : 1), 6000);
-            }
-            if(score >= milestones[500] + 500) {
-                milestones[500] += 500; showAlert("COIN RAIN", "#ff0");
-                for(let i=0;i<15;i++) coins.push({x:Math.random()*850, y:Math.random()*550});
-                if(save.eqPerks.includes('shield')) player.hasShield = true;
-            }
-            if(score >= milestones[1500] + 1500) {
-                milestones[1500] += 1500; showAlert("MEGA UP + CLEANSE", "#f0f");
-                coins.push({x: 450, y: 300, mega: true}); enemies = [];
-            }
+// NEW HATS
+hats['skull_king'] = { name:"Skull King", icon:"💀", price:2500000 };
+hats['matrix'] = { name:"Matrix Visor", icon:"🕶️", price:3500000 };
+hats['dragon'] = { name:"Dragon Crown", icon:"🐉", price:5000000 };
 
-            // --- Drone Logic ---
-            if(save.eqDrone) {
-                droneAngle += 0.06;
-                let count = save.eqDrone === 'twin' ? 2 : 1;
-                for(let j=0; j<count; j++){
-                    let offset = (Math.PI * j);
-                    let dx = player.x + Math.cos(droneAngle + offset) * 60;
-                    let dy = player.y + Math.sin(droneAngle + offset) * 60;
-                    ctx.fillStyle = '#fff'; ctx.fillRect(dx-4, dy-4, 8, 8);
-                    enemies.forEach((en, i) => {
-                        if(Math.hypot(dx-en.x, dy-en.y) < droneData[save.eqDrone].r) {
-                            ctx.strokeStyle = skinData[save.eqSkin]; ctx.lineWidth = 2;
-                            ctx.beginPath(); ctx.moveTo(dx,dy); ctx.lineTo(en.x, en.y); ctx.stroke();
-                            enemies.splice(i,1); score += 10; updateSave();
-                        }
+// NEW CORES
+cores['infinity'] = { n:'Infinity Core', p:99999999999, m:25, desc:'25x ALL STATS' };
+cores['god_core'] = { n:'GOD CORE', p:250000000000, m:50, desc:'50x ALL POWER' };
+
+// NEW SECRET ITEMS
+skins['obsidian'] = { c:'#111111', p:9000000, t:'ball' };
+skins['toxic_rainbow'] = { c:'rainbow', p:12000000, t:'ball' };
+
+// NEW BOSS TYPES
+function spawnMegaBoss(){
+    enemies.push({
+        x:450,
+        y:-200,
+        v:4,
+        isBoss:true,
+        mega:true,
+        hp:50000
+    });
+
+    document.getElementById('event-banner').innerText = 'MEGA TITAN ARRIVED';
+    document.getElementById('event-banner').style.display='block';
+
+    showFlexToast('⚠ MEGA TITAN SPAWNED');
+}
+
+// ARENA MODE
+let arenaMode = false;
+
+window.toggleArenaMode = function(){
+    arenaMode = !arenaMode;
+
+    if(arenaMode){
+        showFlexToast('ARENA MODE ENABLED');
+
+        setInterval(()=>{
+            if(active && arenaMode){
+                for(let i=0;i<10;i++){
+                    enemies.push({
+                        x:Math.random()*880,
+                        y:-Math.random()*600,
+                        v:7+Math.random()*7,
+                        isBoss:Math.random()<0.2
                     });
                 }
             }
+        },1500);
 
-            // --- Trail ---
-            player.trail.push({x:player.x, y:player.y});
-            if(player.trail.length > 15) player.trail.shift();
-            player.trail.forEach((t,i)=>{
-                ctx.fillStyle = skinData[save.eqSkin]; ctx.globalAlpha = i/15;
-                ctx.beginPath(); ctx.arc(t.x, t.y, 10*(i/15), 0, Math.PI*2); ctx.fill();
-            });
-            ctx.globalAlpha = 1;
+    } else {
+        showFlexToast('ARENA MODE DISABLED');
+    }
+}
 
-            // --- Enemies ---
-            if(Math.random() < 0.08 * gameSpeed) enemies.push({x: Math.random()*880, y:-20, v:(3+score/2500)*gameSpeed});
-            enemies.forEach((en, i) => {
-                en.y += en.v;
-                if(Math.hypot(player.x-en.x, player.y-en.y) < 18) die();
-                if(en.y > 620) { enemies.splice(i,1); score += (save.eqPerks.includes('overload') ? 20 : 10); updateSave(); }
-                ctx.fillStyle = '#f0f'; ctx.fillRect(en.x-8, en.y-8, 16, 16);
-            });
+// XP SYSTEM
+if(typeof save.xp === 'undefined') save.xp = 0;
+if(typeof save.level === 'undefined') save.level = 1;
 
-            // --- Coins ---
-            if(Math.random() < 0.025) coins.push({x: Math.random()*850, y: Math.random()*550});
-            coins.forEach((cn, i) => {
-                let d = Math.hypot(player.x-cn.x, player.y-cn.y);
-                if(save.eqPerks.includes('magnet') && d < 200) {
-                    cn.x += (player.x - cn.x) * 0.12; cn.y += (player.y - cn.y) * 0.12;
-                }
-                if(d < (cn.mega?45:25)) {
-                    let val = cn.mega ? 1000 : 100;
-                    if(save.eqPerks.includes('interest')) val *= 1.5;
-                    save.up += val; coins.splice(i,1); updateSave();
-                }
-                ctx.fillStyle = cn.mega ? '#f0f' : '#ff0';
-                ctx.beginPath(); ctx.arc(cn.x, cn.y, cn.mega?15:5, 0, Math.PI*2); ctx.fill();
-            });
+function addXP(amount){
+    save.xp += amount;
 
-            requestAnimationFrame(loop);
+    if(save.xp >= save.level * 1000){
+        save.xp = 0;
+        save.level++;
+
+        save.up += save.level * 50000;
+
+        playPurchase();
+        showFlexToast('LEVEL UP ➜ LVL ' + save.level);
+    }
+}
+
+// XP HUD
+const xpHud = document.createElement('div');
+xpHud.id = 'xpHud';
+xpHud.style.position='fixed';
+xpHud.style.right='10px';
+xpHud.style.bottom='10px';
+xpHud.style.zIndex='99999';
+xpHud.style.background='rgba(0,0,0,0.8)';
+xpHud.style.border='2px solid var(--accent)';
+xpHud.style.padding='10px';
+xpHud.style.color='white';
+xpHud.style.fontFamily='monospace';
+document.body.appendChild(xpHud);
+
+setInterval(()=>{
+    xpHud.innerHTML = `
+    <div style="font-weight:900;color:var(--accent)">
+    LEVEL SYSTEM
+    </div>
+    LVL: ${save.level}<br>
+    XP: ${save.xp}/${save.level*1000}
+    `;
+},250);
+
+// RANDOM LOOT BOX
+function giveLootBox(){
+    const rewards = [
+        500000,
+        1000000,
+        5000000,
+        25000000
+    ];
+
+    const reward = rewards[Math.floor(Math.random()*rewards.length)];
+    save.up += reward;
+
+    showFlexToast('🎁 LOOT BOX ➜ +' + reward.toLocaleString() + ' UP');
+    updateUI();
+}
+
+setInterval(()=>{
+    if(active && Math.random()<0.15){
+        giveLootBox();
+    }
+},20000);
+
+// PET SYSTEM
+if(typeof save.pet === 'undefined') save.pet = null;
+
+const pets = {
+    cube:{ name:'Cyber Cube', icon:'🟦' },
+    demon:{ name:'Mini Demon', icon:'😈' },
+    ghost:{ name:'Ghost AI', icon:'👻' }
+};
+
+const petDiv = document.createElement('div');
+petDiv.style.position='fixed';
+petDiv.style.pointerEvents='none';
+petDiv.style.zIndex='99998';
+petDiv.style.fontSize='28px';
+document.body.appendChild(petDiv);
+
+setInterval(()=>{
+    if(save.pet){
+        petDiv.innerText = pets[save.pet].icon;
+
+        const rect = canvas.getBoundingClientRect();
+        const px = rect.left + (p.x / 900) * rect.width;
+        const py = rect.top + (p.y / 600) * rect.height;
+
+        petDiv.style.left = (px + 50) + 'px';
+        petDiv.style.top = (py + 20) + 'px';
+    }
+},30);
+
+// AUTO PET UNLOCK
+save.pet = 'demon';
+
+// NEW TAB BUTTON
+const extraBtn = document.createElement('button');
+extraBtn.innerText = 'ARENA';
+extraBtn.className = 'm-btn';
+extraBtn.style.position='fixed';
+extraBtn.style.top='20px';
+extraBtn.style.left='20px';
+extraBtn.style.zIndex='99999';
+extraBtn.onclick = toggleArenaMode;
+document.body.appendChild(extraBtn);
+
+// MEGA BOSS TIMER
+setInterval(()=>{
+    if(active && Math.random()<0.1){
+        spawnMegaBoss();
+    }
+},30000);
+
+// XP GAIN LOOP
+setInterval(()=>{
+    if(active){
+        addXP(25);
+    }
+},1000);
+
+
+
+// ==============================
+// APOCALYPSE OVERDRIVE PACK
+// ==============================
+
+// 5000x SCORE CORE
+cores['apocalypse_core'] = {
+    n:'APOCALYPSE CORE',
+    p:999999999999,
+    m:5000,
+    desc:'5000x SCORE + MONEY'
+};
+
+// SECRET DEV CORE
+cores['dev_core'] = {
+    n:'DEV CORE X',
+    p:9999999999999,
+    m:15000,
+    desc:'15000x EVERYTHING'
+};
+
+// NEW OMEGA WEAPONS
+drones['galaxy_destroyer'] = {
+    n:'GALAXY DESTROYER',
+    p:500000000000,
+    r:4000,
+    limit:999,
+    cd:100,
+    dmg:999999
+};
+
+drones['void_cannon'] = {
+    n:'VOID CANNON',
+    p:800000000000,
+    r:5000,
+    limit:999,
+    cd:50,
+    dmg:5000000
+};
+
+drones['omega_ray'] = {
+    n:'OMEGA RAY',
+    p:1200000000000,
+    r:9999,
+    limit:9999,
+    cd:10,
+    dmg:99999999
+};
+
+// NEW PERKS
+perks['immortal'] = {
+    n:'IMMORTALITY',
+    p:999999999,
+};
+
+perks['money_printer'] = {
+    n:'MONEY PRINTER',
+    p:1500000000,
+};
+
+perks['chaos_engine'] = {
+    n:'CHAOS ENGINE',
+    p:3500000000,
+};
+
+// EXTRA SHOP TABS
+const tabsContainer = document.createElement('div');
+tabsContainer.style.position='fixed';
+tabsContainer.style.right='20px';
+tabsContainer.style.top='120px';
+tabsContainer.style.zIndex='99999';
+tabsContainer.style.display='flex';
+tabsContainer.style.flexDirection='column';
+tabsContainer.style.gap='10px';
+
+tabsContainer.innerHTML = `
+<button class="m-btn" onclick="openBlackMarket()">BLACK MARKET</button>
+<button class="m-btn" onclick="openLabs()">LABS</button>
+<button class="m-btn" onclick="openVault()">VAULT</button>
+`;
+
+document.body.appendChild(tabsContainer);
+
+// BLACK MARKET
+window.openBlackMarket = function(){
+    const reward = Math.floor(Math.random()*5000000000);
+
+    save.up += reward;
+
+    showFlexToast('BLACK MARKET ➜ +' + reward.toLocaleString() + ' UP');
+
+    for(let i=0;i<40;i++){
+        enemies.push({
+            x:Math.random()*880,
+            y:-Math.random()*1500,
+            v:5+Math.random()*12,
+            isBoss:Math.random()<0.5
+        });
+    }
+
+    updateUI();
+    saveData();
+};
+
+// LABS
+window.openLabs = function(){
+
+    rainbowMode = true;
+    novaMode = true;
+
+    save.up += 10000000000;
+
+    for(let i=0;i<250;i++){
+        coins.push({
+            x:Math.random()*850,
+            y:-Math.random()*4000
+        });
+    }
+
+    showFlexToast('LABS OVERDRIVE ACTIVATED');
+
+    updateUI();
+};
+
+// VAULT
+window.openVault = function(){
+
+    const everything = [
+        ...Object.keys(drones),
+        ...Object.keys(perks),
+        ...Object.keys(cores),
+        ...Object.keys(skins)
+    ];
+
+    everything.forEach(item=>{
+        if(!save.owned.includes(item)){
+            save.owned.push(item);
         }
-    </script>
+    });
+
+    Object.keys(shapes).forEach(shape=>{
+        if(!save.ownedShapes.includes(shape)){
+            save.ownedShapes.push(shape);
+        }
+    });
+
+    save.up += 999999999999;
+
+    updateUI();
+    saveData();
+
+    showFlexToast('VAULT OPENED');
+};
+
+// NEW EVENTS
+const apocalypseEvents = [
+    'WORLD BREAKER',
+    'HELL PROTOCOL',
+    'CYBER EXTINCTION',
+    'VOID SWARM',
+    'INFINITE CHAOS'
+];
+
+setInterval(()=>{
+
+    if(active && Math.random()<0.35){
+
+        const ev = apocalypseEvents[
+            Math.floor(Math.random()*apocalypseEvents.length)
+        ];
+
+        const banner = document.getElementById('event-banner');
+
+        banner.innerText = ev;
+        banner.style.display='block';
+        banner.style.color='#ff0000';
+
+        if(ev === 'WORLD BREAKER'){
+
+            for(let i=0;i<150;i++){
+
+                enemies.push({
+                    x:Math.random()*880,
+                    y:-Math.random()*6000,
+                    v:10+Math.random()*20,
+                    isBoss:true
+                });
+            }
+        }
+
+        if(ev === 'VOID SWARM'){
+
+            for(let i=0;i<400;i++){
+
+                coins.push({
+                    x:Math.random()*850,
+                    y:-Math.random()*5000
+                });
+            }
+        }
+
+        if(ev === 'INFINITE CHAOS'){
+            rainbowMode = true;
+            novaMode = true;
+        }
+
+        setTimeout(()=>{
+            banner.style.display='none';
+        },6000);
+    }
+
+},15000);
+
+// AUTO MONEY ENGINE
+setInterval(()=>{
+
+    if(save.eqPerks && save.eqPerks.includes('money_printer')){
+
+        save.up += 5000000;
+
+        updateUI();
+    }
+
+},1000);
+
+// IMMORTAL MODE
+const oldDie = die;
+
+die = async function(reason){
+
+    if(save.eqPerks && save.eqPerks.includes('immortal')){
+
+        showFlexToast('IMMORTALITY SAVED YOU');
+
+        playPurchase();
+
+        return;
+    }
+
+    return oldDie(reason);
+};
+
+// CHAOS ENGINE
+setInterval(()=>{
+
+    if(active && save.eqPerks && save.eqPerks.includes('chaos_engine')){
+
+        for(let i=0;i<20;i++){
+
+            enemies.push({
+                x:Math.random()*880,
+                y:-Math.random()*3000,
+                v:8+Math.random()*15,
+                isBoss:Math.random()<0.3
+            });
+        }
+    }
+
+},3000);
+
+// VISUAL EFFECTS
+setInterval(()=>{
+
+    const fx = document.createElement('div');
+
+    fx.innerText = ['☢️','🔥','💀','⚡','👑','💸','🧬','🌌'][
+        Math.floor(Math.random()*8)
+    ];
+
+    fx.style.position='fixed';
+    fx.style.left=Math.random()*100+'vw';
+    fx.style.top='-50px';
+    fx.style.fontSize=(30+Math.random()*60)+'px';
+    fx.style.zIndex='1';
+    fx.style.pointerEvents='none';
+    fx.style.transition='transform 6s linear, opacity 6s';
+
+    document.body.appendChild(fx);
+
+    requestAnimationFrame(()=>{
+        fx.style.transform='translateY(120vh) rotate(720deg)';
+        fx.style.opacity='0';
+    });
+
+    setTimeout(()=>{
+        fx.remove();
+    },6500);
+
+},180);
+
+
+</script>
 </body>
 </html>
