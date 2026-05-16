@@ -645,6 +645,8 @@ function renderShop(){
     h += `<div class="item" onclick="copyFlexScore()"><b>FLEX COPY</b><span class="price">kopiuje wynik do schowka</span></div>`;
     h += `<div class="item" onclick="toggleShop()"><b>CLOSE SHOP</b><span class="price">natychmiastowy powrót</span></div>`;
     h += `<div class="item" onclick="p.god=!p.god;showFlexToast(p.god?'GOD MODE ON':'GOD MODE OFF')"><b>GOD MODE</b><span class="price">przełącznik testowy</span></div>`;
+    h += `<div class="item" onclick="killEverything()"><b>KILL ALL</b><span class="price">czyści całe pole</span></div>`;
+    h += `<div class="item" onclick="toggleInfiniteBossMode()"><b>INFINITE BOSS</b><span class="price">boss spawn bez końca</span></div>`;
     h += `<div class="item" onclick="forceEvent('GLITCH TIDE')"><b>GLITCH TIDE</b><span class="price">specjalny chaos event</span></div>`;
     h += `</div>`;
     h += `<p style="color:var(--accent)">HOT TIPS</p><div style="color:#bbb;font-size:0.86rem;line-height:1.5">` +
@@ -823,17 +825,24 @@ function loop(){
 
   // boss timer handling (unchanged)
   if(bossActive){
-    bossTimer--;
-    if(bossTimer <= 0){
-      bossActive = false;
-      eventActive = false;
-      let bonus = 100000;
-      if(Array.isArray(save.eqCores) && save.eqCores.length) save.eqCores.forEach(c => { if(cores[c] && cores[c].m) bonus *= cores[c].m });
-      if(save.eqCores.includes('apex')) bonus = Math.floor(bonus * 1.6);
-      save.up += bonus;
-      document.getElementById('event-banner').style.display = 'none';
-      lastEventScore = score; updateUI(); saveData();
-      playBossDefeat();
+    if(infiniteBossMode){
+      bossTimer = 999999999;
+      document.getElementById('event-banner').style.display = 'block';
+      document.getElementById('event-banner').innerText = 'INFINITE BOSS MODE';
+      document.getElementById('event-banner').style.color = 'var(--danger)';
+    } else {
+      bossTimer--;
+      if(bossTimer <= 0){
+        bossActive = false;
+        eventActive = false;
+        let bonus = 100000;
+        if(Array.isArray(save.eqCores) && save.eqCores.length) save.eqCores.forEach(c => { if(cores[c] && cores[c].m) bonus *= cores[c].m });
+        if(save.eqCores.includes('apex')) bonus = Math.floor(bonus * 1.6);
+        save.up += bonus;
+        document.getElementById('event-banner').style.display = 'none';
+        lastEventScore = score; updateUI(); saveData();
+        playBossDefeat();
+      }
     }
   }
 
@@ -968,7 +977,7 @@ function saveData(){ localStorage.setItem('nd_v10_final', JSON.stringify(save));
 
 // ---------- INPUTS & HOTKEYS ----------
 window.addEventListener('mousemove', e=>{ const r=canvas.getBoundingClientRect(); p.tx = (e.clientX - r.left) * (900/r.width); p.ty = (e.clientY - r.top) * (600/r.height); });
-window.addEventListener('keydown', e=>{ if(e.key==='`'){ const con=document.getElementById('console'); con.style.display=(con.style.display==='block')?'none':'block'; if(con.style.display==='block') document.getElementById('consoleInput').focus(); } if(e.key==='Enter' && document.activeElement.id==='consoleInput'){ let cmd=document.getElementById('consoleInput').value.toUpperCase(); if(cmd==='RICH'){ save.up += 100000000; updateUI(); playPurchase() } if(cmd==='GOD'){ p.god = !p.god; playBeep(660,0.08,'sine',0.15) } if(cmd==='UNLOCK ALL'){ const allItems = [...Object.keys(skins), ...Object.keys(drones), ...Object.keys(perks), ...Object.keys(cores)]; save.owned = [...new Set([...save.owned, ...allItems])]; save.ownedShapes = [...new Set([...save.ownedShapes, ...Object.keys(shapes)])]; if(document.getElementById('shop').classList.contains('open')) renderShop(); } document.getElementById('consoleInput').value=''; saveData(); updateUI(); } });
+window.addEventListener('keydown', e=>{ if(e.key==='`'){ const con=document.getElementById('console'); con.style.display=(con.style.display==='block')?'none':'block'; if(con.style.display==='block') document.getElementById('consoleInput').focus(); } if(e.key==='Enter' && document.activeElement.id==='consoleInput'){ let cmd=document.getElementById('consoleInput').value.toUpperCase(); if(cmd==='RICH'){ save.up += 100000000; updateUI(); playPurchase() } if(cmd==='GOD'){ p.god = !p.god; playBeep(660,0.08,'sine',0.15) } if(cmd==='KILL'){ killEverything(); } if(cmd==='INFINITE BOSS'){ toggleInfiniteBossMode(); } if(cmd==='UNLOCK ALL'){ const allItems = [...Object.keys(skins), ...Object.keys(drones), ...Object.keys(perks), ...Object.keys(cores)]; save.owned = [...new Set([...save.owned, ...allItems])]; save.ownedShapes = [...new Set([...save.ownedShapes, ...Object.keys(shapes)])]; if(document.getElementById('shop').classList.contains('open')) renderShop(); } document.getElementById('consoleInput').value=''; saveData(); updateUI(); } });
 
 /* ===========================
    DODATKOWY KOD: SYSTEM CZAPEK
@@ -1451,8 +1460,8 @@ function addXP(amount){
 const xpHud = document.createElement('div');
 xpHud.id = 'xpHud';
 xpHud.style.position='fixed';
-xpHud.style.right='10px';
-xpHud.style.bottom='10px';
+xpHud.style.right='420px';
+xpHud.style.bottom='30px';
 xpHud.style.zIndex='99999';
 xpHud.style.background='rgba(0,0,0,0.8)';
 xpHud.style.border='2px solid var(--accent)';
@@ -1530,8 +1539,8 @@ const extraBtn = document.createElement('button');
 extraBtn.innerText = 'ARENA';
 extraBtn.className = 'm-btn';
 extraBtn.style.position='fixed';
-extraBtn.style.top='20px';
-extraBtn.style.left='20px';
+extraBtn.style.top='80px';
+extraBtn.style.left='260px';
 extraBtn.style.zIndex='99999';
 extraBtn.onclick = toggleArenaMode;
 document.body.appendChild(extraBtn);
@@ -1841,6 +1850,713 @@ setInterval(()=>{
 
 },180);
 
+
+
+/* ===========================
+   KAPSEL'S CHAOS MEGA PACK
+   add-only expansion
+   =========================== */
+(function(){
+  if (window.__KAPSEL_CHAOS_MEGA_PACK__) return;
+  window.__KAPSEL_CHAOS_MEGA_PACK__ = true;
+
+  // --------- NEW ITEMS ---------
+  const extraSkins = {
+    'prism': { c:'rainbow', p: 15000000, t:'ball' },
+    'necro': { c:'#440000', p: 18000000, t:'ball' },
+    'matrix_green': { c:'#00ff88', p: 12000000, t:'drone' },
+    'aether': { c:'#88ccff', p: 22000000, t:'all' },
+    'inferno_plus': { c:'#ff3300', p: 26000000, t:'all' }
+  };
+  Object.assign(skins, extraSkins);
+
+  const extraDrones = {
+    'starfall': { n:'STARFALL', p: 1800000000000, r: 2600, limit: 120, cd: 180, dmg: 250000 },
+    'black_hole': { n:'BLACK HOLE', p: 2600000000000, r: 5000, limit: 90, cd: 220, dmg: 9999999 },
+    'sunbreaker': { n:'SUNBREAKER', p: 3600000000000, r: 3500, limit: 150, cd: 140, dmg: 1250000 },
+    'neon_spear': { n:'NEON SPEAR', p: 900000000000, r: 1800, limit: 80, cd: 90, dmg: 700000 }
+  };
+  Object.assign(drones, extraDrones);
+
+  const extraPerks = {
+    'overclock_2': { n:'OVERCLOCK+', p: 50000000000 },
+    'void_step': { n:'VOID STEP', p: 75000000000 },
+    'gold_rush_x': { n:'GOLD RUSH X', p: 100000000000 },
+    'berserk': { n:'BERSERK', p: 25000000000 },
+    'phoenix': { n:'PHOENIX', p: 150000000000 }
+  };
+  Object.assign(perks, extraPerks);
+
+  const extraCores = {
+    'score_5000': { n:'5000X SCORE CORE', p: 999999999999, m: 5000, desc: '5000x SCORE ONLY' },
+    'apex_overdrive': { n:'APEX OVERDRIVE', p: 1999999999999, m: 9000, desc: '9000x ALL' },
+    'singularity_plus': { n:'SINGULARITY+', p: 2999999999999, m: 12000, desc: '12000x ALL' }
+  };
+  Object.assign(cores, extraCores);
+
+  const extraShapes = {
+    'ring': { name:'Rift Ring', price: 90000000 },
+    'arrow': { name:'Arrow Frame', price: 125000000 },
+    'crown2': { name:'Chaos Crown', price: 250000000 }
+  };
+  Object.assign(shapes, extraShapes);
+
+  const extraHats = {
+    'void_helm': { name:'Void Helm', icon:'🪐', price: 5000000 },
+    'stormcap': { name:'Storm Cap', icon:'🌩️', price: 4500000 },
+    'demon_visor': { name:'Demon Visor', icon:'😈', price: 6500000 }
+  };
+  Object.assign(hats, extraHats);
+
+  // --------- NEW VARIABLES ---------
+  if (typeof save.shards === 'undefined') save.shards = 0;
+  if (typeof save.prestige === 'undefined') save.prestige = 0;
+  if (typeof save.dimensions === 'undefined') save.dimensions = 0;
+  if (typeof save.raidWins === 'undefined') save.raidWins = 0;
+  if (typeof save.ownedRelics === 'undefined') save.ownedRelics = [];
+
+  // --------- SHOP TABS ---------
+  const extraTabBar = document.createElement('div');
+  extraTabBar.style.display = 'grid';
+  extraTabBar.style.gridTemplateColumns = 'repeat(2, 1fr)';
+  extraTabBar.style.gap = '8px';
+  extraTabBar.style.margin = '10px 0 14px 0';
+  extraTabBar.innerHTML = `
+    <button class="m-btn" data-tab="vault">VAULT</button>
+    <button class="m-btn" data-tab="lab">LAB+</button>
+    <button class="m-btn" data-tab="raids">RAIDS</button>
+    <button class="m-btn" data-tab="fusion">FUSION</button>
+  `;
+  const shopNode = document.getElementById('shop');
+  if (shopNode) shopNode.insertBefore(extraTabBar, document.getElementById('shopList'));
+
+  extraTabBar.querySelectorAll('button[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // --------- SWITCH TAB PATCH ---------
+  const _switchTab = window.switchTab;
+  window.switchTab = function(tab){
+    currentTab = tab;
+    if (document.getElementById('tab-skins')) document.getElementById('tab-skins').style.filter = (tab==='skins') ? 'brightness(1.15)' : 'none';
+    if (document.getElementById('tab-shapes')) document.getElementById('tab-shapes').style.filter = (tab==='shapes') ? 'brightness(1.15)' : 'none';
+    renderShop();
+  };
+
+  // --------- SHOP RENDER PATCH ---------
+  const _renderShop = window.renderShop;
+  window.renderShop = function(){
+    _renderShop();
+
+    const shopList = document.getElementById('shopList');
+    if (!shopList) return;
+
+    let extra = '';
+
+    if (currentTab === 'vault') {
+      extra += `<p style="color:var(--accent);margin-top:14px">VAULT OF ABUSE</p><div class="shop-grid">`;
+      extra += `
+        <div class="item" onclick="unlockChaosVault()">OPEN CHAOS VAULT<br><span class="price">FREE?</span></div>
+        <div class="item" onclick="grantRelics()">GRANT RELICS<br><span class="price">FLEX ONLY</span></div>
+        <div class="item" onclick="buyPrestige()">PRESTIGE TOKEN<br><span class="price">${(50000000000).toLocaleString()} UP</span></div>
+        <div class="item" onclick="applyMegaOverdrive()">MEGA OVERDRIVE<br><span class="price">${(250000000000).toLocaleString()} UP</span></div>`;
+      extra += `</div>`;
+
+      extra += `<p style="color:var(--accent);margin-top:14px">RELICS</p><div class="shop-grid">`;
+      const relics = [
+        ['relic_1', 'RELIC: BLADE OF NOISE', 25000000000],
+        ['relic_2', 'RELIC: CROWN OF GLITCH', 35000000000],
+        ['relic_3', 'RELIC: TOME OF FIRE', 50000000000],
+        ['relic_4', 'RELIC: VOID HEART', 75000000000]
+      ];
+      relics.forEach(([id, name, price]) => {
+        const owned = save.ownedRelics.includes(id);
+        extra += `<div class="item ${owned?'owned':''}" onclick="buyRelic('${id}','${name}',${price})">${name}<br><span class="price">${owned?'OWNED':price.toLocaleString()+' UP'}</span></div>`;
+      });
+      extra += `</div>`;
+    }
+
+    if (currentTab === 'lab') {
+      extra += `<p style="color:var(--accent);margin-top:14px">LAB+ SYSTEMS</p><div class="shop-grid">`;
+      extra += `
+        <div class="item" onclick="spawnLabStorm()">LAB STORM<br><span class="price">CHAOS</span></div>
+        <div class="item" onclick="spawnLabBoss()">LAB BOSS<br><span class="price">BOSS</span></div>
+        <div class="item" onclick="boostScience()">SCIENCE BOOST<br><span class="price">+XP</span></div>
+        <div class="item" onclick="spawnResearchLoot()">RESEARCH LOOT<br><span class="price">MONEY</span></div>`;
+      extra += `</div>`;
+      extra += `<p style="color:var(--accent);margin-top:14px">LAB UPGRADES</p><div class="shop-grid">`;
+      const labUpgrades = [
+        ['lab_core', 'LAB CORE', 65000000000],
+        ['lab_neurons', 'NEURON STACK', 90000000000],
+        ['lab_eclipse', 'ECLIPSE CHIP', 120000000000]
+      ];
+      labUpgrades.forEach(([id, name, price]) => {
+        const owned = save.owned.includes(id);
+        extra += `<div class="item ${owned?'owned':''}" onclick="buy('${id}','perk',${price})">${name}<br><span class="price">${owned?'OWNED':price.toLocaleString()+' UP'}</span></div>`;
+      });
+      extra += `</div>`;
+    }
+
+    if (currentTab === 'raids') {
+      extra += `<p style="color:var(--accent);margin-top:14px">RAID OPERATIONS</p><div class="shop-grid">`;
+      extra += `
+        <div class="item" onclick="startRaid('omega')">RAID: OMEGA<br><span class="price">RAID WAVE</span></div>
+        <div class="item" onclick="startRaid('void')">RAID: VOID<br><span class="price">VOID WAVE</span></div>
+        <div class="item" onclick="startRaid('inferno')">RAID: INFERNO<br><span class="price">FIRE WAVE</span></div>
+        <div class="item" onclick="startRaid('apocalypse')">RAID: APOCALYPSE<br><span class="price">FULL CHAOS</span></div>`;
+      extra += `</div>`;
+      extra += `<p style="color:var(--accent);margin-top:14px">RAID BONUSES</p><div class="shop-grid">`;
+      const raidItems = [
+        ['raid_banner', 'RAID BANNER', 180000000000],
+        ['raid_shield', 'RAID SHIELD', 220000000000],
+        ['raid_cannon', 'RAID CANNON', 320000000000]
+      ];
+      raidItems.forEach(([id, name, price]) => {
+        const owned = save.owned.includes(id);
+        extra += `<div class="item ${owned?'owned':''}" onclick="buy('${id}','drone',${price})">${name}<br><span class="price">${owned?'OWNED':price.toLocaleString()+' UP'}</span></div>`;
+      });
+      extra += `</div>`;
+    }
+
+    if (currentTab === 'fusion') {
+      extra += `<p style="color:var(--accent);margin-top:14px">FUSION FORGE</p><div class="shop-grid">`;
+      extra += `
+        <div class="item" onclick="fuseTo('omega_plus')">FUSE: OMEGA+<br><span class="price">CORE MIX</span></div>
+        <div class="item" onclick="fuseTo('voidstar')">FUSE: VOIDSTAR<br><span class="price">CORE MIX</span></div>
+        <div class="item" onclick="fuseTo('godstorm')">FUSE: GODSTORM<br><span class="price">CORE MIX</span></div>
+        <div class="item" onclick="fuseTo('apexx')">FUSE: APEXX<br><span class="price">CORE MIX</span></div>`;
+      extra += `</div>`;
+
+      extra += `<p style="color:var(--accent);margin-top:14px">ACTIVE FUSIONS</p><div class="shop-grid">`;
+      const fusions = [
+        ['fusion_score', 'FUSION SCORE', 500000000000],
+        ['fusion_coin', 'FUSION COIN', 650000000000],
+        ['fusion_shield', 'FUSION SHIELD', 800000000000]
+      ];
+      fusions.forEach(([id, name, price]) => {
+        const owned = save.owned.includes(id);
+        extra += `<div class="item ${owned?'owned':''}" onclick="buy('${id}','core',${price})">${name}<br><span class="price">${owned?'OWNED':price.toLocaleString()+' UP'}</span></div>`;
+      });
+      extra += `</div>`;
+    }
+
+    if (extra) shopList.insertAdjacentHTML('beforeend', extra);
+  };
+
+  // --------- HELPERS ---------
+  window.unlockChaosVault = function(){
+    const allIds = [
+      ...Object.keys(skins),
+      ...Object.keys(drones),
+      ...Object.keys(perks),
+      ...Object.keys(cores)
+    ];
+    save.owned = [...new Set([...(save.owned || []), ...allIds])];
+    save.ownedShapes = [...new Set([...(save.ownedShapes || []), ...Object.keys(shapes)])];
+    save.ownedHats = [...new Set([...(save.ownedHats || []), ...Object.keys(hats)])];
+    save.up += 250000000000;
+    saveData(); updateUI(); renderShop();
+    showFlexToast('CHAOS VAULT OPENED');
+  };
+
+  window.grantRelics = function(){
+    const relicIds = ['relic_1','relic_2','relic_3','relic_4'];
+    save.ownedRelics = [...new Set([...(save.ownedRelics || []), ...relicIds])];
+    save.shards += 5000;
+    saveData(); updateUI(); renderShop();
+    showFlexToast('RELICS GRANTED');
+  };
+
+  window.buyRelic = function(id, name, price){
+    if (!save.ownedRelics.includes(id)) {
+      if (save.up < price) { playBeep(200,0.08,'sine',0.08); return; }
+      save.up -= price;
+      save.ownedRelics.push(id);
+    } else {
+      save.shards += 250;
+    }
+    saveData(); updateUI(); renderShop();
+    showFlexToast(name + ' ACQUIRED');
+  };
+
+  window.buyPrestige = function(){
+    if (save.up < 50000000000) { playBeep(180,0.08,'sine',0.08); return; }
+    save.up -= 50000000000;
+    save.prestige += 1;
+    save.shards += 1000;
+    save.best += Math.floor(score * 0.25);
+    showFlexToast('PRESTIGE +1');
+    saveData(); updateUI();
+  };
+
+  window.applyMegaOverdrive = function(){
+    save.up += 1000000000000;
+    rainbowMode = true;
+    novaMode = true;
+    timeMod = 1.75;
+    p.hasShield = true;
+    save.shards += 2500;
+    playNova();
+    showFlexToast('MEGA OVERDRIVE ACTIVE');
+    saveData(); updateUI();
+  };
+
+  window.spawnLabStorm = function(){
+    for (let i=0;i<80;i++) {
+      enemies.push({
+        x: Math.random()*880,
+        y: -Math.random()*2500,
+        v: 6 + Math.random()*14,
+        isBoss: Math.random() < 0.25
+      });
+    }
+    showFlexToast('LAB STORM RELEASED');
+  };
+
+  window.spawnLabBoss = function(){
+    enemies.push({ x: 450, y: -200, v: 3, isBoss: true, mega: true });
+    enemies.push({ x: 380, y: -350, v: 4, isBoss: true, mega: true });
+    showFlexToast('LAB BOSS ENTERED');
+    document.getElementById('event-banner').innerText = 'LAB BOSS';
+    document.getElementById('event-banner').style.display = 'block';
+    setTimeout(()=> document.getElementById('event-banner').style.display = 'none', 4000);
+  };
+
+  window.boostScience = function(){
+    save.xp = (save.xp || 0) + 5000;
+    save.shards += 500;
+    save.up += 500000000;
+    saveData(); updateUI();
+    showFlexToast('SCIENCE BOOST');
+  };
+
+  window.spawnResearchLoot = function(){
+    for (let i=0;i<120;i++) {
+      coins.push({ x: Math.random()*850, y: -Math.random()*1800 });
+    }
+    save.up += 2500000000;
+    saveData(); updateUI();
+    showFlexToast('RESEARCH LOOT DROP');
+  };
+
+  window.startRaid = function(type){
+    const banner = document.getElementById('event-banner');
+    banner.style.display = 'block';
+    banner.style.color = '#ff4444';
+    banner.innerText = 'RAID: ' + type.toUpperCase();
+    const n = type === 'apocalypse' ? 140 : type === 'void' ? 90 : type === 'inferno' ? 70 : 50;
+    for (let i=0;i<n;i++) {
+      enemies.push({
+        x: Math.random()*880,
+        y: -Math.random()*5000,
+        v: 7 + Math.random()*18,
+        isBoss: Math.random() < (type === 'apocalypse' ? 0.45 : 0.25)
+      });
+    }
+    if (type === 'apocalypse') {
+      rainbowMode = true;
+      novaMode = true;
+      save.up += 50000000000;
+      save.shards += 5000;
+    }
+    showFlexToast('RAID STARTED: ' + type.toUpperCase());
+    setTimeout(()=> banner.style.display='none', 5000);
+  };
+
+  window.fuseTo = function(id){
+    const fusionMap = {
+      omega_plus: { bonus: 2.5, shards: 4000, msg: 'OMEGA+' },
+      voidstar: { bonus: 4, shards: 7000, msg: 'VOIDSTAR' },
+      godstorm: { bonus: 8, shards: 12000, msg: 'GODSTORM' },
+      apexx: { bonus: 16, shards: 20000, msg: 'APEXX' }
+    };
+    const f = fusionMap[id];
+    if (!f) return;
+    save.shards += f.shards;
+    save.up += Math.floor((save.up || 0) * f.bonus * 0.01) + 1000000000;
+    save.best += Math.floor((score || 0) * f.bonus);
+    saveData(); updateUI();
+    showFlexToast('FUSED: ' + f.msg);
+  };
+
+  // --------- GAMEPLAY PATCHES ---------
+  const _getMultiplier = window.getMultiplier;
+  window.getMultiplier = function(){
+    let m = _getMultiplier ? _getMultiplier() : 1;
+    if (save.prestige) m *= (1 + save.prestige * 0.25);
+    if (save.shards) m *= (1 + Math.min(save.shards, 25000) / 50000);
+    if (save.owned.includes('score_5000')) m *= 5000;
+    return m;
+  };
+
+  const _addScore = window.addScore;
+  window.addScore = function(amount){
+    let boost = amount;
+    if (save.owned.includes('score_5000')) boost *= 5000;
+    if (save.owned.includes('apocalypse_core')) boost *= 5000;
+    if (save.owned.includes('dev_core')) boost *= 15000;
+    return _addScore ? _addScore(boost) : (score += boost);
+  };
+
+  const _playOpenShop = window.playOpenShop;
+  window.playOpenShop = function(){
+    if (_playOpenShop) _playOpenShop();
+    if (save.owned.includes('chaos_engine')) playBeep(990,0.05,'square',0.14);
+  };
+
+  // --------- HUD PATCH ---------
+  const oldUpdateUI = window.updateUI;
+  window.updateUI = function(){
+    if (oldUpdateUI) oldUpdateUI();
+  };
+
+  // --------- AUTO REALM EVENTS ---------
+  setInterval(() => {
+    if (!active) return;
+    if (Math.random() < 0.08) {
+      const realms = ['SHATTER', 'RIFT', 'PARADOX', 'ECLIPSE', 'ABYSS'];
+      const ev = realms[Math.floor(Math.random() * realms.length)];
+      const banner = document.getElementById('event-banner');
+      banner.style.display = 'block';
+      banner.style.color = '#ffcc00';
+      banner.innerText = 'REALM: ' + ev;
+      if (ev === 'SHATTER') { save.up += 2500000000; }
+      if (ev === 'RIFT') { save.shards += 500; }
+      if (ev === 'PARADOX') { rainbowMode = true; novaMode = true; }
+      if (ev === 'ECLIPSE') { p.hasShield = true; }
+      if (ev === 'ABYSS') {
+        for (let i=0;i<40;i++) enemies.push({ x: Math.random()*880, y: -Math.random()*2400, v: 10+Math.random()*10, isBoss: i%7===0 });
+      }
+      save.dimensions = (save.dimensions || 0) + 1;
+      saveData(); updateUI();
+      setTimeout(()=> { banner.style.display='none'; }, 4500);
+    }
+  }, 14000);
+
+  // --------- SHOCKWAVE BUTTON ---------
+  const shockBtn = document.createElement('button');
+  shockBtn.className = 'm-btn';
+  shockBtn.textContent = 'SHOCKWAVE';
+  shockBtn.style.position = 'fixed';
+  shockBtn.style.left = '20px';
+  shockBtn.style.bottom = '76px';
+  shockBtn.style.zIndex = '10002';
+  shockBtn.onclick = function(){
+    for (let i=0;i<100;i++) {
+      coins.push({ x: Math.random()*850, y: -Math.random()*1200 });
+    }
+    for (let i=0;i<35;i++) {
+      enemies.push({ x: Math.random()*880, y: -Math.random()*1700, v: 9 + Math.random()*10, isBoss: Math.random()<0.3 });
+    }
+    save.up += 10000000000;
+    showFlexToast('SHOCKWAVE RELEASED');
+    updateUI(); saveData();
+  };
+  document.body.appendChild(shockBtn);
+
+  // --------- DIMENSIONAL RIFT BUTTON ---------
+  const riftBtn = document.createElement('button');
+  riftBtn.className = 'm-btn';
+  riftBtn.textContent = 'RIFT';
+  riftBtn.style.position = 'fixed';
+  riftBtn.style.left = '20px';
+  riftBtn.style.bottom = '20px';
+  riftBtn.style.zIndex = '10002';
+  riftBtn.onclick = function(){
+    save.dimensions = (save.dimensions || 0) + 1;
+    save.shards += 2000;
+    rainbowMode = true;
+    novaMode = true;
+    timeMod = 1.5;
+    save.up += 25000000000;
+    showFlexToast('RIFT OPENED');
+    updateUI(); saveData();
+  };
+  document.body.appendChild(riftBtn);
+
+  // --------- PRESTIGE SCORE TICK ---------
+  setInterval(() => {
+    if (!active) return;
+    if (save.prestige > 0) {
+      save.shards += save.prestige;
+      if (Math.random() < 0.1) save.up += save.prestige * 1000000;
+      updateUI();
+    }
+  }, 2500);
+
+  // --------- BERSERK / PHOENIX / VOID STEP ---------
+  const originalDie = window.die;
+  window.die = async function(reason){
+    if (save.owned.includes('phoenix')) {
+      save.owned = [...new Set(save.owned)];
+      p.hasShield = true;
+      save.up += 2500000000;
+      showFlexToast('PHOENIX RESURRECT');
+      playPurchase();
+      updateUI(); saveData();
+      return;
+    }
+    return originalDie(reason);
+  };
+
+})();
+
+
+// OBLIVION OVERKILL UPDATE
+
+drones['sun_eater'] = {
+ n:'SUN EATER',
+ p:99999999999999,
+ r:25000,
+ limit:99999,
+ cd:1,
+ dmg:999999999
+};
+
+drones['reality_breaker'] = {
+ n:'REALITY BREAKER',
+ p:999999999999999,
+ r:99999,
+ limit:999999,
+ cd:1,
+ dmg:99999999999
+};
+
+cores['omega_infinity'] = {
+ n:'OMEGA INFINITY',
+ p:9999999999999999,
+ m:50000,
+ desc:'50000x EVERYTHING'
+};
+
+cores['forbidden_core'] = {
+ n:'FORBIDDEN CORE',
+ p:99999999999999999,
+ m:999999,
+ desc:'REALITY COLLAPSE'
+};
+
+window.activateDimensionMode = function(){
+
+ rainbowMode = true;
+ novaMode = true;
+
+ for(let i=0;i<500;i++){
+   enemies.push({
+     x:Math.random()*880,
+     y:-Math.random()*12000,
+     v:15+Math.random()*25,
+     isBoss:true
+   });
+ }
+
+ save.up += 9999999999999;
+ updateUI();
+
+ showFlexToast('DIMENSION MODE ACTIVATED');
+};
+
+
+// ===== MEGA CHAOS CONTENT PACK =====
+drones['infinite_gun'] = {
+ n:'INFINITE GUN',
+ p:999999999999999999,
+ r:99999,
+ limit:99999999,
+ cd:0,
+ dmg:999999999999
+};
+
+drones['cataclysm_laser'] = {
+ n:'CATACLYSM LASER',
+ p:75000000000000000,
+ r:12000,
+ limit:999999,
+ cd:1,
+ dmg:99999999999
+};
+
+perks['overkill'] = {
+ n:'OVERKILL',
+ p:9999999999999
+};
+
+perks['bullet_hell'] = {
+ n:'BULLET HELL',
+ p:25000000000000
+};
+
+cores['singularity_prime'] = {
+ n:'SINGULARITY PRIME',
+ p:99999999999999999,
+ m:75000,
+ desc:'75000x EVERYTHING'
+};
+
+cores['doom_core'] = {
+ n:'DOOM CORE',
+ p:999999999999999999,
+ m:150000,
+ desc:'ABSOLUTE MADNESS'
+};
+
+if(!extraEventPool.includes('BOSS APOCALYPSE')) extraEventPool.push('BOSS APOCALYPSE');
+eventCodex['BOSS APOCALYPSE'] = { desc:'Permanent boss flood. Total insanity.', color:'#ff0033' };
+
+let infiniteBossMode = false;
+let infiniteBossTicker = null;
+
+function spawnBossWave(count=3){
+  for(let i=0;i<count;i++){
+    enemies.push({
+      x: 100 + Math.random()*700,
+      y: -120 - i*70,
+      v: 6 + Math.random()*10,
+      isBoss: true,
+      mega: true,
+      hp: 25000
+    });
+  }
+}
+
+window.killEverything = function(){
+  enemies = [];
+  coins = [];
+  bossActive = false;
+  eventActive = false;
+  document.getElementById('event-banner').style.display = 'none';
+  playKill();
+  showFlexToast('KILL SWITCH: ENEMIES CLEARED');
+  saveData();
+  updateUI();
+};
+
+window.toggleInfiniteBossMode = function(){
+  infiniteBossMode = !infiniteBossMode;
+
+  const banner = document.getElementById('event-banner');
+  if(infiniteBossMode){
+    bossActive = true;
+    eventActive = true;
+    bossTimer = 999999999;
+    banner.innerText = 'INFINITE BOSS MODE';
+    banner.style.display = 'block';
+    banner.style.color = 'var(--danger)';
+    showFlexToast('INFINITE BOSS MODE ON');
+    spawnBossWave(5);
+
+    if(infiniteBossTicker) clearInterval(infiniteBossTicker);
+    infiniteBossTicker = setInterval(()=>{
+      if(active && infiniteBossMode){
+        bossActive = true;
+        eventActive = true;
+        bossTimer = 999999999;
+        spawnBossWave(4);
+      }
+    }, 1200);
+  } else {
+    if(infiniteBossTicker){ clearInterval(infiniteBossTicker); infiniteBossTicker = null; }
+    bossActive = false;
+    eventActive = false;
+    banner.style.display = 'none';
+    showFlexToast('INFINITE BOSS MODE OFF');
+  }
+};
+
+window.spawnInfiniteBoss = function(){
+  infiniteBossMode = true;
+  window.toggleInfiniteBossMode();
+  showFlexToast('INFINITE BOSS PRIME');
+};
+
+const devPanel = document.createElement('div');
+devPanel.style.position='fixed';
+devPanel.style.left='20px';
+devPanel.style.bottom='20px';
+devPanel.style.zIndex='999999';
+devPanel.style.background='rgba(0,0,0,0.85)';
+devPanel.style.border='3px solid red';
+devPanel.style.padding='10px';
+
+devPanel.innerHTML = `
+<div style="color:red;font-weight:900;margin-bottom:10px;">
+☢ DEV OVERDRIVE ☢
+</div>
+
+<button onclick="activateDimensionMode()" class="m-btn">
+DIMENSION
+</button>
+
+<button onclick="freeCash()" class="m-btn">
+FREE CASH
+</button>
+
+<button onclick="killEverything()" class="m-btn">
+KILL
+</button>
+
+<button onclick="toggleInfiniteBossMode()" class="m-btn">
+INFINITE BOSS
+</button>
+`;
+
+document.body.appendChild(devPanel);
+
+window.freeCash = function(){
+
+ save.up += 999999999999999;
+
+ for(let i=0;i<2000;i++){
+   coins.push({
+     x:Math.random()*850,
+     y:-Math.random()*15000
+   });
+ }
+
+ updateUI();
+ saveData();
+
+ showFlexToast('FREE CASH ACTIVATED');
+};
+
+
+setInterval(()=>{
+  if(active && infiniteBossMode){
+    bossActive = true;
+    eventActive = true;
+    bossTimer = 999999999;
+    if(Math.random() < 0.45) spawnBossWave(2 + Math.floor(Math.random()*3));
+  }
+},700);
+
+setInterval(()=>{
+
+ const fx = document.createElement('div');
+
+ fx.innerText = ['☢','💀','👑','🔥','⚡','🌌','🧬','💸'][
+   Math.floor(Math.random()*8)
+ ];
+
+ fx.style.position='fixed';
+ fx.style.left=Math.random()*100+'vw';
+ fx.style.top='-80px';
+ fx.style.fontSize=(40+Math.random()*90)+'px';
+ fx.style.pointerEvents='none';
+ fx.style.zIndex='5';
+ fx.style.transition='transform 8s linear, opacity 8s';
+
+ document.body.appendChild(fx);
+
+ requestAnimationFrame(()=>{
+   fx.style.transform='translateY(140vh) rotate(1440deg)';
+   fx.style.opacity='0';
+ });
+
+ setTimeout(()=>{
+   fx.remove();
+ },8500);
+
+},120);
 
 </script>
 </body>
